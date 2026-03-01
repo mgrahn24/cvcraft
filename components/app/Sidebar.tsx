@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Users, Briefcase, FileText, Shield, FilePlus2 } from 'lucide-react';
+import { LayoutDashboard, Users, Briefcase, FileText, Shield, FilePlus2, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const NAV_ITEMS = [
@@ -24,6 +24,20 @@ export function Sidebar() {
       </div>
 
       <nav className="flex-1 py-3 px-2 space-y-0.5 overflow-y-auto">
+        {/* Primary action */}
+        <Link
+          href="/generate"
+          className={cn(
+            'flex items-center gap-2.5 px-2.5 py-2 rounded-md text-sm font-medium transition-colors mb-2',
+            pathname === '/generate' || pathname.startsWith('/generate/')
+              ? 'bg-primary text-primary-foreground'
+              : 'bg-primary/10 text-primary hover:bg-primary/20'
+          )}
+        >
+          <Sparkles size={16} className="shrink-0" />
+          Generate CV
+        </Link>
+
         {NAV_ITEMS.map(({ href, label, icon: Icon, exact }) => {
           const active = exact ? pathname === href : pathname === href || pathname.startsWith(href + '/');
           return (

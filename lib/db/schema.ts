@@ -72,9 +72,9 @@ export const cvVersions = pgTable('cv_versions', {
   id: text('id').primaryKey(),
   consultantId: text('consultant_id')
     .notNull()
-    .references(() => consultants.id),
-  templateId: text('template_id').references(() => cvTemplates.id),
-  opportunityId: text('opportunity_id').references(() => opportunities.id),
+    .references(() => consultants.id, { onDelete: 'cascade' }),
+  templateId: text('template_id').references(() => cvTemplates.id, { onDelete: 'set null' }),
+  opportunityId: text('opportunity_id').references(() => opportunities.id, { onDelete: 'set null' }),
   rulesetIds: jsonb('ruleset_ids').$type<string[]>(),
   /** Canvas-compatible HTML section components — the generated CV content */
   components: jsonb('components').notNull().$type<Component[]>(),

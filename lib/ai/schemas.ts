@@ -3,17 +3,19 @@ import { DAISY_THEMES, FONT_FAMILIES, COMPONENT_TYPES } from '@/types';
 
 // ── CV domain schemas ────────────────────────────────────────────────────────
 
+// Groq requires ALL object properties to be in "required", so we use .nullable()
+// instead of .optional() throughout these schemas. null = field not applicable.
 const profileEntrySchema = z.object({
   id: z.string(),
-  title: z.string().optional(),
-  organisation: z.string().optional(),
-  location: z.string().optional(),
-  startDate: z.string().optional(),
-  endDate: z.string().optional(),
-  description: z.string().optional(),
-  skills: z.array(z.string()).optional(),
-  level: z.string().optional(),
-  url: z.string().optional(),
+  title: z.string().nullable().describe('null if not applicable'),
+  organisation: z.string().nullable().describe('null if not applicable'),
+  location: z.string().nullable().describe('null if not applicable'),
+  startDate: z.string().nullable().describe('null if not applicable'),
+  endDate: z.string().nullable().describe('null if not applicable — use null for current roles'),
+  description: z.string().nullable().describe('null if not applicable'),
+  skills: z.array(z.string()).nullable().describe('null if not applicable'),
+  level: z.string().nullable().describe('null if not applicable'),
+  url: z.string().nullable().describe('null if not applicable'),
 });
 
 const profileSectionExtractionSchema = z.object({
@@ -23,11 +25,11 @@ const profileSectionExtractionSchema = z.object({
 
 export const profileExtractionSchema = z.object({
   name: z.string().describe('Full name of the consultant'),
-  headline: z.string().optional().describe('Professional headline or job title'),
-  email: z.string().optional(),
-  phone: z.string().optional(),
-  location: z.string().optional(),
-  summary: z.string().optional().describe('Professional summary paragraph'),
+  headline: z.string().nullable().describe('Professional headline or job title; null if not found'),
+  email: z.string().nullable().describe('null if not found'),
+  phone: z.string().nullable().describe('null if not found'),
+  location: z.string().nullable().describe('null if not found'),
+  summary: z.string().nullable().describe('Professional summary paragraph; null if not found'),
   sections: z.array(profileSectionExtractionSchema),
 });
 
@@ -36,11 +38,11 @@ export const contentSelectionSchema = z.object({
     z.object({
       sectionType: z.string(),
       selectedEntryIds: z.array(z.string()),
-      rationale: z.string().optional(),
+      rationale: z.string().nullable().describe('null if no rationale needed'),
     })
   ),
   focusPoints: z.array(z.string()).describe('Key points to emphasise in the CV'),
-  suggestedHeadline: z.string().optional(),
+  suggestedHeadline: z.string().nullable().describe('null if no change needed'),
   suggestedSummary: z.string().describe('Tailored professional summary for this opportunity'),
 });
 

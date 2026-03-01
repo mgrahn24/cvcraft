@@ -2,23 +2,33 @@
 
 import { useState, useTransition } from 'react';
 import { upsertProfileSection, deleteProfileSection } from '@/lib/actions/consultants';
-import { ChevronDown, ChevronRight, Plus, Trash2 } from 'lucide-react';
+import { ChevronDown, ChevronRight, Plus, Trash2, Briefcase, GraduationCap, Wrench, Award, FolderOpen, Globe, BookOpen } from 'lucide-react';
 import type { ProfileSectionType, ProfileEntry } from '@/types';
 import type { ProfileSectionRow } from '@/lib/db/schema';
+
+const SECTION_ICON: Record<ProfileSectionType, React.ElementType> = {
+  experience: Briefcase,
+  education: GraduationCap,
+  skills: Wrench,
+  certifications: Award,
+  projects: FolderOpen,
+  languages: Globe,
+  publications: BookOpen,
+};
 
 interface Props {
   consultantId: string;
   section: ProfileSectionRow | null;
   type: ProfileSectionType;
   label: string;
-  Icon: React.ElementType;
 }
 
 function emptyEntry(): ProfileEntry {
   return { id: crypto.randomUUID() };
 }
 
-export function SectionEditor({ consultantId, section, type, label, Icon }: Props) {
+export function SectionEditor({ consultantId, section, type, label }: Props) {
+  const Icon = SECTION_ICON[type];
   const [open, setOpen] = useState(!!section);
   const [entries, setEntries] = useState<ProfileEntry[]>(
     section?.entries?.length ? (section.entries as ProfileEntry[]) : []

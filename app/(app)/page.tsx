@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { db } from '@/lib/db';
 import { consultants, opportunities, cvVersions } from '@/lib/db/schema';
 import { desc } from 'drizzle-orm';
-import { Users, Briefcase, FileText, Plus, ArrowRight } from 'lucide-react';
+import { Users, Briefcase, FileText, Plus, ArrowRight, Sparkles } from 'lucide-react';
 
 export default async function DashboardPage() {
   const [recentConsultants, recentOpportunities, recentCVs] = await Promise.all([
@@ -20,8 +20,20 @@ export default async function DashboardPage() {
       {/* Quick actions */}
       <div className="grid grid-cols-3 gap-4 mb-10">
         <Link
+          href="/generate"
+          className="flex items-center gap-3 p-4 rounded-lg border border-primary/30 bg-primary/5 hover:bg-primary/10 transition-colors col-span-3 sm:col-span-1"
+        >
+          <div className="w-9 h-9 rounded-md bg-primary flex items-center justify-center shrink-0">
+            <Sparkles size={16} className="text-primary-foreground" />
+          </div>
+          <div>
+            <div className="text-sm font-semibold text-primary">Generate CV</div>
+            <div className="text-xs text-muted-foreground">Pick consultant, opportunity & template</div>
+          </div>
+        </Link>
+        <Link
           href="/profiles/new"
-          className="flex items-center gap-3 p-4 rounded-lg border border-border hover:bg-muted/40 transition-colors group"
+          className="flex items-center gap-3 p-4 rounded-lg border border-border hover:bg-muted/40 transition-colors"
         >
           <div className="w-9 h-9 rounded-md bg-primary/10 flex items-center justify-center shrink-0">
             <Plus size={16} className="text-primary" />
@@ -33,26 +45,14 @@ export default async function DashboardPage() {
         </Link>
         <Link
           href="/opportunities/new"
-          className="flex items-center gap-3 p-4 rounded-lg border border-border hover:bg-muted/40 transition-colors group"
+          className="flex items-center gap-3 p-4 rounded-lg border border-border hover:bg-muted/40 transition-colors"
         >
           <div className="w-9 h-9 rounded-md bg-primary/10 flex items-center justify-center shrink-0">
             <Plus size={16} className="text-primary" />
           </div>
           <div>
             <div className="text-sm font-medium">New Opportunity</div>
-            <div className="text-xs text-muted-foreground">Create & generate CVs</div>
-          </div>
-        </Link>
-        <Link
-          href="/templates"
-          className="flex items-center gap-3 p-4 rounded-lg border border-border hover:bg-muted/40 transition-colors group"
-        >
-          <div className="w-9 h-9 rounded-md bg-primary/10 flex items-center justify-center shrink-0">
-            <FileText size={16} className="text-primary" />
-          </div>
-          <div>
-            <div className="text-sm font-medium">Browse Templates</div>
-            <div className="text-xs text-muted-foreground">Pick a CV layout</div>
+            <div className="text-xs text-muted-foreground">Define role & client</div>
           </div>
         </Link>
       </div>

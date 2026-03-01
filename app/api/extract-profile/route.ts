@@ -25,16 +25,30 @@ export async function POST(req: Request) {
       prompt: `Extract the structured profile from this CV:\n\n${cvText.slice(0, 12000)}`,
     });
 
+    // Schema uses .nullable() for Groq compatibility; convert null → undefined for DB layer
+    const n2u = <T>(v: T | null): T | undefined => v ?? undefined;
+
     const id = await createConsultantFromExtraction({
       name: object.name,
-      headline: object.headline,
-      email: object.email,
-      phone: object.phone,
-      location: object.location,
-      summary: object.summary,
+      headline: n2u(object.headline),
+      email: n2u(object.email),
+      phone: n2u(object.phone),
+      location: n2u(object.location),
+      summary: n2u(object.summary),
       sections: object.sections.map((s) => ({
         type: s.type,
-        entries: s.entries.map((e) => ({ ...e, id: e.id || crypto.randomUUID() })),
+        entries: s.entries.map((e) => ({
+          id: e.id || crypto.randomUUID(),
+          title: n2u(e.title),
+          organisation: n2u(e.organisation),
+          location: n2u(e.location),
+          startDate: n2u(e.startDate),
+          endDate: n2u(e.endDate),
+          description: n2u(e.description),
+          skills: n2u(e.skills) ?? undefined,
+          level: n2u(e.level),
+          url: n2u(e.url),
+        })),
       })),
     });
 
