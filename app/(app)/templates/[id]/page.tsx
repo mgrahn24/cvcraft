@@ -4,8 +4,9 @@ import Link from 'next/link';
 import { db } from '@/lib/db';
 import { cvTemplates } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Pencil } from 'lucide-react';
 import type { Component, Theme } from '@/types';
+import { DeleteTemplateButton } from './DeleteTemplateButton';
 
 export default async function TemplateDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -23,8 +24,19 @@ export default async function TemplateDetailPage({ params }: { params: Promise<{
       </Link>
 
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-semibold">{template.name}</h1>
-        <span className="text-xs text-muted-foreground capitalize bg-muted px-2 py-1 rounded">{template.category}</span>
+        <div>
+          <h1 className="text-2xl font-semibold">{template.name}</h1>
+          <span className="text-xs text-muted-foreground capitalize">{template.category}</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <Link
+            href={`/templates/${id}/edit`}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-border text-sm hover:bg-muted/40 transition-colors"
+          >
+            <Pencil size={13} /> Edit
+          </Link>
+          <DeleteTemplateButton id={id} isBuiltIn={template.isBuiltIn} />
+        </div>
       </div>
 
       <div className="rounded-lg border border-border overflow-hidden bg-white" data-theme={theme.daisyTheme}>
@@ -33,6 +45,7 @@ export default async function TemplateDetailPage({ params }: { params: Promise<{
 
       <p className="text-xs text-muted-foreground mt-3">
         Theme: <strong>{theme.daisyTheme}</strong> · Font: <strong>{theme.fontFamily}</strong>
+        {template.isBuiltIn && <span className="ml-2 bg-muted px-1.5 py-0.5 rounded">Built-in</span>}
       </p>
     </div>
   );
