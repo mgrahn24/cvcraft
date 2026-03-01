@@ -3,8 +3,8 @@ import Script from 'next/script';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Blitz — Page Builder',
-  description: 'AI-powered visual page builder',
+  title: 'CVCraft',
+  description: 'AI-powered CV generator for consultancies',
 };
 
 export default function RootLayout({
@@ -15,7 +15,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        {/* Google Fonts — pre-load all curated font families */}
+        {/* Google Fonts */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
@@ -23,11 +23,7 @@ export default function RootLayout({
           rel="stylesheet"
         />
 
-        {/*
-          DaisyUI CSS — provides all component styles (btn, card, navbar, hero, etc.)
-          and data-theme scoped color variables.
-          Load as a CSS link (not a JS plugin) — simplest and most reliable approach.
-        */}
+        {/* DaisyUI — component styles + data-theme color variables (for canvas) */}
         <link
           href="https://cdn.jsdelivr.net/npm/daisyui@4/dist/full.min.css"
           rel="stylesheet"
@@ -37,16 +33,7 @@ export default function RootLayout({
       <body>
         {children}
 
-        {/*
-          Gradient @property fix — Tailwind v4 PostCSS declares
-          --tw-gradient-from/to/via with syntax:"<color>", which rejects the
-          Tailwind v3 CDN's color-stop values that include a position suffix
-          (e.g. "oklch(...) 0%"). Those rejected values fall back to #0000
-          (transparent), making all gradients appear as plain grey in the editor.
-          This script appends a <style> tag AFTER the compiled CSS link so our
-          @property re-declarations (with syntax:"*") win the cascade and allow
-          any value, restoring gradients in the canvas.
-        */}
+        {/* Gradient @property fix for Tailwind v4 + Tailwind CDN coexistence */}
         <Script
           id="gradient-property-fix"
           strategy="beforeInteractive"
@@ -55,14 +42,7 @@ export default function RootLayout({
           }}
         />
 
-        {/*
-          Tailwind CDN config — must be defined BEFORE the CDN script loads.
-          Maps DaisyUI semantic colors to their CSS variable expressions so that
-          gradient utilities (from-primary, to-base-200, bg-gradient-*, etc.)
-          generate correct CSS. Without this the CDN doesn't know these color
-          names and either skips them or emits an empty rule that overrides
-          DaisyUI's own gradient CSS (CDN <style> appears after DaisyUI <link>).
-        */}
+        {/* Tailwind CDN config — maps DaisyUI color names to CSS vars */}
         <Script
           id="tailwind-cdn-config"
           strategy="beforeInteractive"
@@ -92,31 +72,21 @@ export default function RootLayout({
           }}
         />
 
-        {/*
-          Tailwind Play CDN — processes utility classes on the full DOM,
-          including dynamically injected canvas content, via MutationObserver.
-          Loaded after DaisyUI CSS so both coexist without conflicts.
-        */}
+        {/* Tailwind Play CDN — processes canvas classes dynamically */}
         <Script
           id="tailwind-cdn"
           src="https://cdn.tailwindcss.com"
           strategy="beforeInteractive"
         />
 
-        {/*
-          Alpine.js — auto-initialises x-data elements (including dynamically added ones)
-          via MutationObserver. Deferred so it runs after the DOM is ready.
-        */}
+        {/* Alpine.js — powers canvas x-data directives */}
         <Script
           id="alpine-cdn"
           src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"
           strategy="afterInteractive"
         />
 
-        {/*
-          Lucide icons — replaces <i data-lucide="icon-name"> elements with clean SVGs.
-          canvasManager calls window.lucide.createIcons() after each innerHTML update.
-        */}
+        {/* Lucide icons — replaces <i data-lucide=""> with SVGs */}
         <Script
           id="lucide-cdn"
           src="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.min.js"

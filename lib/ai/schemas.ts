@@ -1,6 +1,66 @@
 import { z } from 'zod';
 import { DAISY_THEMES, FONT_FAMILIES, COMPONENT_TYPES } from '@/types';
 
+// ── CV domain schemas ────────────────────────────────────────────────────────
+
+const profileEntrySchema = z.object({
+  id: z.string(),
+  title: z.string().optional(),
+  organisation: z.string().optional(),
+  location: z.string().optional(),
+  startDate: z.string().optional(),
+  endDate: z.string().optional(),
+  description: z.string().optional(),
+  skills: z.array(z.string()).optional(),
+  level: z.string().optional(),
+  url: z.string().optional(),
+});
+
+const profileSectionExtractionSchema = z.object({
+  type: z.enum(['experience', 'education', 'skills', 'certifications', 'projects', 'languages', 'publications']),
+  entries: z.array(profileEntrySchema),
+});
+
+export const profileExtractionSchema = z.object({
+  name: z.string().describe('Full name of the consultant'),
+  headline: z.string().optional().describe('Professional headline or job title'),
+  email: z.string().optional(),
+  phone: z.string().optional(),
+  location: z.string().optional(),
+  summary: z.string().optional().describe('Professional summary paragraph'),
+  sections: z.array(profileSectionExtractionSchema),
+});
+
+export const contentSelectionSchema = z.object({
+  selectedSections: z.array(
+    z.object({
+      sectionType: z.string(),
+      selectedEntryIds: z.array(z.string()),
+      rationale: z.string().optional(),
+    })
+  ),
+  focusPoints: z.array(z.string()).describe('Key points to emphasise in the CV'),
+  suggestedHeadline: z.string().optional(),
+  suggestedSummary: z.string().describe('Tailored professional summary for this opportunity'),
+});
+
+export const cvComponentSchema = z.object({
+  id: z.string().describe('Kebab-case section ID, e.g. "cv-header", "cv-experience"'),
+  label: z.string().describe('Human-readable section name'),
+  html: z.string().describe('Complete self-contained HTML section using Tailwind + DaisyUI classes. No <html>/<head>/<body> tags.'),
+  order: z.number(),
+});
+
+export const cvGenerationSchema = z.object({
+  components: z.array(cvComponentSchema),
+  daisyTheme: z.string().describe('DaisyUI theme that suits this CV style'),
+  fontFamily: z.string().describe('Google Font for the CV'),
+});
+
+export type ProfileExtractionSchema = z.infer<typeof profileExtractionSchema>;
+export type ContentSelectionSchema = z.infer<typeof contentSelectionSchema>;
+export type CVGenerationSchema = z.infer<typeof cvGenerationSchema>;
+
 // COMPONENT_TYPES is a const tuple — z.enum accepts it directly
 export const componentTypeEnum = z.enum(COMPONENT_TYPES);
 

@@ -12,7 +12,7 @@ import type { DaisyTheme, FontFamily } from '@/types';
  * Shared streaming hook for both /api/update (selected components) and /api/refine (whole page).
  * Applies updates to the canvas and store as they stream in.
  */
-export function useStreamUpdate(apiEndpoint: '/api/update' | '/api/refine') {
+export function useStreamUpdate(apiEndpoint: string) {
   const sentCountRef = useRef(0);
   const themeAppliedRef = useRef(false);
   const [error, setError] = useState<string | null>(null);

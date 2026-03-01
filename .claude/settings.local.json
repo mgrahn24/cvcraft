@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install drizzle-orm @vercel/postgres)",
+      "Bash(npm install -D drizzle-kit)",
+      "Bash(npm uninstall @vercel/postgres)",
+      "Bash(npm install @neondatabase/serverless drizzle-orm@latest)",
+      "Bash(npm run build)"
+    ]
+  }
+}

@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { AddSectionDialog } from './AddSectionDialog';
 
-export function RefinePanel() {
+export function RefinePanel({ endpoint = '/api/refine' }: { endpoint?: string }) {
   const [instruction, setInstruction] = useState('');
   const [showAddDialog, setShowAddDialog] = useState(false);
 
@@ -16,7 +16,7 @@ export function RefinePanel() {
   const components = useEditorStore(selectSortedComponents);
   const siteComponents = useEditorStore((s) => s.siteComponents);
 
-  const { submitUpdate, isLoading, stop, error } = useStreamUpdate('/api/refine');
+  const { submitUpdate, isLoading, stop, error } = useStreamUpdate(endpoint);
 
   const handleRefine = () => {
     if (!page || !instruction.trim()) return;

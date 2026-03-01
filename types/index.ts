@@ -1,3 +1,5 @@
+// ── Canvas / editor types (kept for Canvas, canvasManager, storage compatibility) ──
+
 export type ComponentType =
   | 'navbar'
   | 'hero'
@@ -76,16 +78,15 @@ export interface SelectionRect {
 
 export interface PageEntry {
   id: string;
-  name: string;   // Display name e.g. "Home", "About"
-  slug: string;   // Alpine router key e.g. "home", "about"
+  name: string;   // Display name
+  slug: string;   // Router key
   content: PageState;
 }
 
 export interface SavedPage {
   id: string;
   name: string;
-  timestamp: string; // ISO
-  /** Multi-page project save (all pages) */
+  timestamp: string;
   entries: PageEntry[];
   activePageId: string | null;
   appName?: string;
@@ -93,4 +94,97 @@ export interface SavedPage {
   publishedPrivate?: boolean;
   /** @deprecated Legacy single-page save — kept for migration only */
   page?: PageState;
+}
+
+// ── CV domain types ──────────────────────────────────────────────────────────
+
+export type ProfileSectionType =
+  | 'experience'
+  | 'education'
+  | 'skills'
+  | 'certifications'
+  | 'projects'
+  | 'languages'
+  | 'publications';
+
+export interface ProfileEntry {
+  id: string;
+  // Generic fields — each section type uses a subset
+  title?: string;         // job title, degree, cert name, project name
+  organisation?: string;  // company, university, issuer
+  location?: string;
+  startDate?: string;
+  endDate?: string;       // 'Present' or ISO date or null
+  description?: string;  // free text, markdown-friendly
+  skills?: string[];      // for skills section
+  level?: string;         // e.g. 'Fluent', 'Native', 'Advanced'
+  url?: string;
+}
+
+export interface ProfileSection {
+  id: string;
+  consultantId: string;
+  type: ProfileSectionType;
+  entries: ProfileEntry[];
+  order: number;
+}
+
+export interface Consultant {
+  id: string;
+  name: string;
+  headline?: string;
+  email?: string;
+  phone?: string;
+  location?: string;
+  summary?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ConsultantWithSections extends Consultant {
+  sections: ProfileSection[];
+}
+
+export interface Opportunity {
+  id: string;
+  clientName: string;
+  roleTitle: string;
+  description: string;
+  requirements?: string;
+  deadline?: string;
+  createdAt: string;
+}
+
+export interface ConsultantGuidance {
+  id: string;
+  opportunityId: string;
+  consultantId: string;
+  guidance: string;
+}
+
+export interface CVTemplate {
+  id: string;
+  name: string;
+  category: string;
+  components: Component[];  // canvas-compatible HTML section components
+  isBuiltIn: boolean;
+  theme?: Theme;
+}
+
+export interface Ruleset {
+  id: string;
+  name: string;
+  rules: string[];
+}
+
+export interface CVVersion {
+  id: string;
+  consultantId: string;
+  templateId?: string;
+  opportunityId?: string;
+  rulesetIds?: string[];
+  components: Component[];  // canvas-compatible CV sections
+  theme: Theme;
+  createdAt: string;
+  parentVersionId?: string;
 }

@@ -4,7 +4,7 @@ import { useEditorStore } from '@/lib/store/editorStore';
 import { ComponentEditPanel } from './ComponentEditPanel';
 import { RefinePanel } from './RefinePanel';
 
-export function EditPanel() {
+export function EditPanel({ refineEndpoint }: { refineEndpoint?: string }) {
   const page = useEditorStore((s) => s.page);
   const isGenerating = useEditorStore((s) => s.isGenerating);
   const selectedIds = useEditorStore((s) => s.selectedComponentIds);
@@ -35,7 +35,7 @@ export function EditPanel() {
 
   return (
     <div className="h-full">
-      <RefinePanel />
+      <RefinePanel endpoint={refineEndpoint} />
     </div>
   );
 }

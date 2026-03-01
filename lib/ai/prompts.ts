@@ -538,3 +538,93 @@ ${stripDataUrls(component.html)}
 
 Generate 4–6 specific improvement suggestions for this ${component.type} section.
 `.trim();
+
+// ── CV generation prompts ─────────────────────────────────────────────────────
+
+export const CV_GENERATION_SYSTEM_PROMPT = `\
+You are an expert CV writer for a professional consultancy. Your task is to generate a polished, tailored CV as a set of HTML sections.
+
+## OUTPUT FORMAT
+Return a JSON object with:
+- "components": array of CV section objects (id, label, html, order)
+- "daisyTheme": DaisyUI theme name (e.g. "light", "corporate", "dark")
+- "fontFamily": Google Font name (e.g. "Inter", "Merriweather")
+
+Each component:
+- id: kebab-case, e.g. "cv-header", "cv-experience", "cv-education", "cv-skills", "cv-summary"
+- label: human-readable section name
+- html: complete HTML section using Tailwind + DaisyUI classes (NO <html>/<head>/<body> tags)
+- order: integer starting at 0
+
+## HTML RULES
+- Use DaisyUI v4 classes freely: badge, card, divider, timeline, steps, stat, etc.
+- Use Tailwind utilities for spacing, typography, layout
+- Semantic colour classes: text-base-content, bg-base-100/200/300, text-primary, bg-primary, text-primary-content
+- ALWAYS pair text colours with backgrounds so text is visible
+- No inline styles except where required for exact sizing
+- No <script> tags, no Alpine.js (CVs are static documents)
+- Lucide icons are available: <i data-lucide="mail"></i>, <i data-lucide="phone"></i>, <i data-lucide="map-pin"></i>, etc.
+- Keep layout clean and professional — this will be printed as a PDF
+
+## CV SECTIONS TO GENERATE
+Always generate at minimum: header, summary, experience, education, skills.
+Add certifications/projects/languages only if the profile contains relevant data.
+
+## CONTENT RULES
+- Write in third person unless instructed otherwise
+- Be specific and use numbers/metrics where available (e.g. "led a team of 8", "reduced latency by 40%")
+- Tailor experience bullets to the opportunity — emphasise relevant skills
+- Select the most relevant experience entries (typically 2–4 most recent/relevant roles)
+- Keep each section concise — this is a 1–2 page CV
+- Do not fabricate information not present in the profile
+`.trim();
+
+export const CV_GENERATION_USER_PROMPT = (params: {
+  consultant: {
+    name: string;
+    headline?: string;
+    email?: string;
+    phone?: string;
+    location?: string;
+    summary?: string;
+    sections: Array<{ type: string; entries: unknown[] }>;
+  };
+  opportunity: {
+    clientName: string;
+    roleTitle: string;
+    description: string;
+    requirements?: string;
+  };
+  templateHtml: string;
+  rulesets: string[];
+  consultantGuidance?: string;
+}): string => `
+## CONSULTANT PROFILE
+${JSON.stringify(params.consultant, null, 2)}
+
+## OPPORTUNITY
+Client: ${params.opportunity.clientName}
+Role: ${params.opportunity.roleTitle}
+Description: ${params.opportunity.description}
+${params.opportunity.requirements ? `Requirements: ${params.opportunity.requirements}` : ''}
+
+## TEMPLATE STYLE REFERENCE
+Study this template HTML to match its visual style, colour usage, and layout conventions:
+\`\`\`html
+${params.templateHtml.slice(0, 3000)}
+\`\`\`
+
+${params.rulesets.length > 0 ? `## GENERATION RULES\n${params.rulesets.map((r, i) => `${i + 1}. ${r}`).join('\n')}` : ''}
+${params.consultantGuidance ? `## GUIDANCE FOR THIS CONSULTANT\n${params.consultantGuidance}` : ''}
+
+Generate a complete, tailored CV for ${params.consultant.name} for the ${params.opportunity.roleTitle} role at ${params.opportunity.clientName}.
+Match the visual style of the template reference closely.
+Output ONLY valid JSON matching the schema. No markdown, no explanation.
+`.trim();
+
+export const CV_REFINEMENT_SYSTEM_PROMPT = `\
+You are a CV expert. The user wants to refine a generated CV.
+Apply the instruction to the HTML sections provided. Return only changed sections.
+Keep the same visual style and DaisyUI/Tailwind class conventions.
+Do not fabricate information not present in the existing content.
+`.trim();
