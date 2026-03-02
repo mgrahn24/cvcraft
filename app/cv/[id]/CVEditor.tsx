@@ -65,42 +65,21 @@ export function CVEditor({ id, components, theme, consultantName, opportunityLab
     if (!canvasWrapperRef.current) return;
     setIsExporting(true);
     try {
-      const [{ default: html2canvas }, { jsPDF }] = await Promise.all([
-        import('html2canvas'),
+      const [{ toPng }, { jsPDF }] = await Promise.all([
+        import('html-to-image'),
         import('jspdf'),
       ]);
       const el = canvasWrapperRef.current;
-      const canvas = await html2canvas(el, {
-        scale: 2,
-        useCORS: true,
+      const imgData = await toPng(el, {
+        pixelRatio: 2,
         backgroundColor: '#ffffff',
-        logging: false,
-        onclone: (_clonedDoc, clonedEl) => {
-          // DaisyUI v4 uses oklch() which html2canvas can't parse.
-          // Inline browser-resolved (rgb) computed colors on every cloned element.
-          const origNodes = [el, ...Array.from(el.querySelectorAll('*'))];
-          const cloneNodes = [clonedEl, ...Array.from(clonedEl.querySelectorAll('*'))];
-          const props = [
-            'color', 'background-color',
-            'border-top-color', 'border-right-color', 'border-bottom-color', 'border-left-color',
-            'outline-color', 'text-decoration-color', 'fill', 'stroke',
-          ];
-          origNodes.forEach((orig, i) => {
-            const clone = cloneNodes[i] as HTMLElement;
-            if (!clone?.style) return;
-            const cs = window.getComputedStyle(orig);
-            for (const prop of props) {
-              const val = cs.getPropertyValue(prop);
-              if (val) clone.style.setProperty(prop, val, 'important');
-            }
-          });
-        },
       });
-      const imgData = canvas.toDataURL('image/png');
+      const img = new Image();
+      await new Promise<void>((resolve) => { img.onload = () => resolve(); img.src = imgData; });
       const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
       const pageW = pdf.internal.pageSize.getWidth();
       const pageH = pdf.internal.pageSize.getHeight();
-      const imgH = (canvas.height / canvas.width) * pageW;
+      const imgH = (img.height / img.width) * pageW;
       let y = 0;
       let remaining = imgH;
       let first = true;

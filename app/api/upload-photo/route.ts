@@ -7,9 +7,10 @@ export async function POST(req: Request) {
 
   const ext = file.name.split('.').pop() ?? 'jpg';
   const blob = await put(`headshots/${Date.now()}.${ext}`, file, {
-    access: 'public',
+    access: 'private',
     contentType: file.type || 'image/jpeg',
   });
 
-  return Response.json({ url: blob.url });
+  const proxyUrl = `/api/photo?url=${encodeURIComponent(blob.url)}`;
+  return Response.json({ url: proxyUrl });
 }

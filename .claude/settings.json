@@ -3,7 +3,15 @@
     "allow": [
       "Read(//c/git/blitz/**)",
       "Bash(xargs grep -l \"window.print\\\\|@media print\")",
-      "Bash(npm install html2canvas jspdf)"
+      "Bash(npm install html2canvas jspdf)",
+      "Bash(node -e \"const b = require\\(''@vercel/blob''\\); console.log\\(Object.keys\\(b\\).filter\\(k => k === ''head'' || k === ''put''\\)\\)\")",
+      "Bash(node -e \"const b = require\\(''@vercel/blob''\\); console.log\\(Object.keys\\(b\\)\\)\")",
+      "Bash(node -e \"const {getDownloadUrl} = require\\(''@vercel/blob''\\); console.log\\(typeof getDownloadUrl\\)\")",
+      "Bash(node -e \":*)",
+      "Bash(node -e \"console.log\\(require\\(''./node_modules/html2canvas/package.json''\\).version\\)\")",
+      "Bash(node -e \"require\\(''html-to-image''\\)\")",
+      "Bash(npm install html-to-image --save)",
+      "Bash(node -e \"const h = require\\(''html-to-image''\\); console.log\\(Object.keys\\(h\\)\\)\")"
     ]
   }
 }
