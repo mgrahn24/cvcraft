@@ -6,7 +6,7 @@ import { Canvas } from '@/components/editor/Canvas';
 import { EditPanel } from '@/components/editor/EditPanel';
 import { forkCVVersion, saveCVVersion, deleteCVVersion } from '@/lib/actions/cvVersions';
 import { downloadStandaloneHtml } from '@/lib/utils/storage';
-import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   ArrowLeft, Download, GitBranch, Loader2, Redo2, Save, Trash2, Undo2,
 } from 'lucide-react';
@@ -29,6 +29,7 @@ export function CVEditor({ id, components, theme, consultantName, opportunityLab
   const redo = useEditorStore((s) => s.redo);
   const canUndo = useEditorStore(selectCanUndo);
   const canRedo = useEditorStore(selectCanRedo);
+  const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [saved, setSaved] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
@@ -115,13 +116,13 @@ export function CVEditor({ id, components, theme, consultantName, opportunityLab
     <div className="flex flex-col h-screen w-full overflow-hidden">
       {/* Top bar */}
       <header className="flex-shrink-0 h-12 bg-white border-b border-gray-200 flex items-center gap-3 px-4 print:hidden">
-        <Link
-          href={opportunityId ? `/opportunities/${opportunityId}` : '/cv'}
+        <button
+          onClick={() => router.back()}
           className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-800 transition-colors mr-1"
         >
           <ArrowLeft size={13} />
-          {opportunityId ? 'Opportunity' : 'CVs'}
-        </Link>
+          Back
+        </button>
 
         <div className="h-4 w-px bg-gray-200" />
 
