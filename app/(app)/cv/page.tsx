@@ -1,4 +1,4 @@
-export const dynamic = 'force-dynamic';
+export const revalidate = 10;
 import Link from 'next/link';
 import { db } from '@/lib/db';
 import { cvVersions, consultants, opportunities } from '@/lib/db/schema';
@@ -6,7 +6,12 @@ import { desc, eq } from 'drizzle-orm';
 import { FileText } from 'lucide-react';
 
 export default async function CVListPage() {
-  const cvs = await db.select().from(cvVersions).orderBy(desc(cvVersions.createdAt)).limit(50);
+  const cvs = await db.select({
+    id: cvVersions.id,
+    consultantId: cvVersions.consultantId,
+    opportunityId: cvVersions.opportunityId,
+    createdAt: cvVersions.createdAt,
+  }).from(cvVersions).orderBy(desc(cvVersions.createdAt)).limit(50);
 
   // Batch-load related data
   const consultantIds = [...new Set(cvs.map((cv) => cv.consultantId))];

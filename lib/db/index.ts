@@ -10,7 +10,7 @@ import * as schema from './schema';
 // `connect_timeout` ensures a failed/saturated DB fails fast instead of hanging the request.
 const client = postgres(process.env.DATABASE_URL!, {
   prepare: false,
-  max: process.env.NODE_ENV === 'production' ? 1 : 3,
+  max: 3,
   idle_timeout: 20,
   connect_timeout: 10,
 });

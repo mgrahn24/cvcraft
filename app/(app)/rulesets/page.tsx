@@ -1,4 +1,4 @@
-export const dynamic = 'force-dynamic';
+export const revalidate = 30;
 import { db } from '@/lib/db';
 import { rulesets } from '@/lib/db/schema';
 import { createRuleset } from '@/lib/actions/rulesets';

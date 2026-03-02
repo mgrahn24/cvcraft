@@ -1,4 +1,4 @@
-export const dynamic = 'force-dynamic';
+export const revalidate = 10;
 import Link from 'next/link';
 import { db } from '@/lib/db';
 import { opportunities } from '@/lib/db/schema';

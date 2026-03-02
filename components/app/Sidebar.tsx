@@ -27,6 +27,7 @@ export function Sidebar() {
         {/* Primary action */}
         <Link
           href="/generate"
+          prefetch={false}
           className={cn(
             'flex items-center gap-2.5 px-2.5 py-2 rounded-md text-sm font-medium transition-colors mb-2',
             pathname === '/generate' || pathname.startsWith('/generate/')
@@ -44,6 +45,7 @@ export function Sidebar() {
             <Link
               key={href}
               href={href}
+              prefetch={false}
               className={cn(
                 'flex items-center gap-2.5 px-2.5 py-2 rounded-md text-sm transition-colors',
                 active

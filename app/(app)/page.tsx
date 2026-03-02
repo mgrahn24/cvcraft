@@ -1,4 +1,5 @@
-export const dynamic = 'force-dynamic';
+export const revalidate = 10;
+export const maxDuration = 30;
 import Link from 'next/link';
 import { db } from '@/lib/db';
 import { consultants, opportunities, cvVersions } from '@/lib/db/schema';
