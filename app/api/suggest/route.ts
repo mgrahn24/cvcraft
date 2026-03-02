@@ -4,6 +4,8 @@ import { suggestSchema } from '@/lib/ai/schemas';
 import { CV_SUGGEST_SYSTEM_PROMPT, SUGGEST_USER_PROMPT } from '@/lib/ai/prompts';
 import type { Component, Theme } from '@/types';
 
+export const maxDuration = 30;
+
 export async function POST(req: Request) {
   const { component, theme }: { component: Component; theme: Theme } = await req.json();
 

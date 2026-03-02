@@ -105,15 +105,20 @@ function findEditableEl(target: HTMLElement, wrapper: HTMLElement): HTMLElement 
 
 const DAISYUI_CSS_URL = 'https://cdn.jsdelivr.net/npm/daisyui@4/dist/full.min.css';
 const DAISYUI_LINK_ID = 'daisyui-canvas-css';
+const TAILWIND_CDN_SCRIPT_ID = 'tailwind-cdn';
+const LUCIDE_CDN_SCRIPT_ID = 'lucide-cdn';
+const TAILWIND_CDN_URL = 'https://cdn.tailwindcss.com';
+const LUCIDE_CDN_URL = 'https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.min.js';
 
 export function Canvas() {
   const canvasRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const lastPageSignatureRef = useRef<string | null>(null);
 
-  // Load DaisyUI CSS only while the canvas is mounted (CV editor page).
-  // Keeps all other app pages free of DaisyUI's global style resets.
+  // Load canvas CDN dependencies (DaisyUI, Tailwind CDN, Lucide) only while
+  // the canvas is mounted. Keeps all other app pages free of CDN interference.
   useEffect(() => {
+    // DaisyUI CSS
     if (!document.getElementById(DAISYUI_LINK_ID)) {
       const link = document.createElement('link');
       link.rel = 'stylesheet';
@@ -121,8 +126,51 @@ export function Canvas() {
       link.id = DAISYUI_LINK_ID;
       document.head.appendChild(link);
     }
+
+    // Tailwind CDN — scoped to #cv-canvas-root, DaisyUI colour tokens extended
+    if (!document.getElementById(TAILWIND_CDN_SCRIPT_ID)) {
+      (window as unknown as Record<string, unknown>).tailwind = {
+        config: {
+          important: '#cv-canvas-root',
+          corePlugins: { preflight: false },
+          theme: {
+            extend: {
+              colors: {
+                'base-100': 'oklch(var(--b1) / <alpha-value>)',
+                'base-200': 'oklch(var(--b2) / <alpha-value>)',
+                'base-300': 'oklch(var(--b3) / <alpha-value>)',
+                'base-content': 'oklch(var(--bc) / <alpha-value>)',
+                'primary': 'oklch(var(--p) / <alpha-value>)',
+                'primary-content': 'oklch(var(--pc) / <alpha-value>)',
+                'secondary': 'oklch(var(--s) / <alpha-value>)',
+                'secondary-content': 'oklch(var(--sc) / <alpha-value>)',
+                'accent': 'oklch(var(--a) / <alpha-value>)',
+                'accent-content': 'oklch(var(--ac) / <alpha-value>)',
+                'neutral': 'oklch(var(--n) / <alpha-value>)',
+                'neutral-content': 'oklch(var(--nc) / <alpha-value>)',
+              },
+            },
+          },
+        },
+      };
+      const twScript = document.createElement('script');
+      twScript.id = TAILWIND_CDN_SCRIPT_ID;
+      twScript.src = TAILWIND_CDN_URL;
+      document.head.appendChild(twScript);
+    }
+
+    // Lucide icons CDN
+    if (!document.getElementById(LUCIDE_CDN_SCRIPT_ID)) {
+      const lucideScript = document.createElement('script');
+      lucideScript.id = LUCIDE_CDN_SCRIPT_ID;
+      lucideScript.src = LUCIDE_CDN_URL;
+      document.head.appendChild(lucideScript);
+    }
+
     return () => {
       document.getElementById(DAISYUI_LINK_ID)?.remove();
+      // Scripts are left in the DOM on unmount — their generated styles are
+      // scoped to #cv-canvas-root so they are inert when the canvas is gone.
     };
   }, []);
 

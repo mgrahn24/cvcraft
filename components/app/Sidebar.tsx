@@ -30,7 +30,7 @@ export function Sidebar() {
           className={cn(
             'flex items-center gap-2.5 px-2.5 py-2 rounded-md text-sm font-medium transition-colors mb-2',
             pathname === '/generate' || pathname.startsWith('/generate/')
-              ? 'bg-primary text-primary-foreground'
+              ? 'bg-primary/15 text-primary'
               : 'bg-primary/10 text-primary hover:bg-primary/20'
           )}
         >
