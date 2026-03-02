@@ -5,27 +5,28 @@ import { db } from '@/lib/db';
 import { opportunities, consultants, consultantGuidance, cvVersions, cvTemplates } from '@/lib/db/schema';
 import { eq, desc } from 'drizzle-orm';
 import { ArrowLeft } from 'lucide-react';
-import { seedBuiltInTemplates } from '@/lib/db/seed';
 import { OpportunityForm } from './OpportunityForm';
 import { GenerateWizard } from './GenerateWizard';
 
 export default async function OpportunityDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
 
-  await seedBuiltInTemplates();
-
-  const [opportunity] = await db.select().from(opportunities).where(eq(opportunities.id, id));
-  if (!opportunity) notFound();
-
-  const [allConsultants, allTemplates, guidance, recentCVs] = await Promise.all([
+  const [[opportunity], allConsultants, allTemplates, guidance, recentCVs] = await Promise.all([
+    db.select().from(opportunities).where(eq(opportunities.id, id)),
     db.select().from(consultants).orderBy(consultants.name),
     db.select({ id: cvTemplates.id, name: cvTemplates.name }).from(cvTemplates),
     db.select().from(consultantGuidance).where(eq(consultantGuidance.opportunityId, id)),
-    db.select().from(cvVersions)
+    db.select({
+      id: cvVersions.id,
+      consultantId: cvVersions.consultantId,
+      createdAt: cvVersions.createdAt,
+    }).from(cvVersions)
       .where(eq(cvVersions.opportunityId, id))
       .orderBy(desc(cvVersions.createdAt))
       .limit(10),
   ]);
+
+  if (!opportunity) notFound();
 
   return (
     <div className="p-8 max-w-4xl mx-auto">
