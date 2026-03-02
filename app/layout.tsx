@@ -76,7 +76,7 @@ export default function RootLayout({
         <Script
           id="tailwind-cdn"
           src="https://cdn.tailwindcss.com"
-          strategy="beforeInteractive"
+          strategy="afterInteractive"
         />
 
         {/* Alpine.js — powers canvas x-data directives */}

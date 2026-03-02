@@ -8,7 +8,12 @@ import { cvTemplates } from './schema';
 import { BUILT_IN_TEMPLATES } from '../cv-templates';
 import { inArray } from 'drizzle-orm';
 
+let seeded = false;
+
 export async function seedBuiltInTemplates() {
+  if (seeded) return;
+  seeded = true;
+
   const ids = BUILT_IN_TEMPLATES.map((t) => t.id);
   const existing = await db.select({ id: cvTemplates.id })
     .from(cvTemplates)

@@ -9,9 +9,7 @@ export async function GET(req: Request) {
     const result = await get(url, { access: 'private' });
     if (!result) return new Response('Not found', { status: 404 });
 
-    if (result.statusCode === 304) {
-      return new Response(null, { status: 304, headers: result.headers });
-    }
+    if (!result.stream) return new Response('Not found', { status: 404 });
 
     return new Response(result.stream, {
       headers: {
