@@ -7,9 +7,9 @@ import { Users, Briefcase, FileText, Plus, ArrowRight, Sparkles } from 'lucide-r
 
 export default async function DashboardPage() {
   const [recentConsultants, recentOpportunities, recentCVs] = await Promise.all([
-    db.select().from(consultants).orderBy(desc(consultants.createdAt)).limit(5),
-    db.select().from(opportunities).orderBy(desc(opportunities.createdAt)).limit(5),
-    db.select().from(cvVersions).orderBy(desc(cvVersions.createdAt)).limit(5),
+    db.select({ id: consultants.id, name: consultants.name, headline: consultants.headline }).from(consultants).orderBy(desc(consultants.createdAt)).limit(5),
+    db.select({ id: opportunities.id, roleTitle: opportunities.roleTitle, clientName: opportunities.clientName }).from(opportunities).orderBy(desc(opportunities.createdAt)).limit(5),
+    db.select({ id: cvVersions.id, createdAt: cvVersions.createdAt }).from(cvVersions).orderBy(desc(cvVersions.createdAt)).limit(5),
   ]);
 
   return (
