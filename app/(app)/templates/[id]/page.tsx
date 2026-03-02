@@ -30,7 +30,7 @@ export default async function TemplateDetailPage({ params }: { params: Promise<{
         </div>
         <div className="flex items-center gap-2">
           <Link
-            href={`/templates/${id}/edit`}
+            href={`/template-editor/${id}`}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-border text-sm hover:bg-muted/40 transition-colors"
           >
             <Pencil size={13} /> Edit
@@ -39,7 +39,16 @@ export default async function TemplateDetailPage({ params }: { params: Promise<{
         </div>
       </div>
 
-      <div className="rounded-lg border border-border overflow-hidden bg-white" data-theme={theme.daisyTheme}>
+      {/* eslint-disable-next-line @next/next/no-page-custom-font */}
+      <link
+        rel="stylesheet"
+        href={`https://fonts.googleapis.com/css2?family=${encodeURIComponent(theme.fontFamily).replace(/%20/g, '+')}:wght@400;500;600;700&display=swap`}
+      />
+      <div
+        className="rounded-lg border border-border overflow-hidden bg-base-100"
+        data-theme={theme.daisyTheme}
+        style={{ fontFamily: `'${theme.fontFamily}', sans-serif` }}
+      >
         <div dangerouslySetInnerHTML={{ __html: allHtml }} />
       </div>
 

@@ -539,45 +539,263 @@ ${stripDataUrls(component.html)}
 Generate 4–6 specific improvement suggestions for this ${component.type} section.
 `.trim();
 
-// ── CV generation prompts ─────────────────────────────────────────────────────
+// ─────────────────────────────────────────────
+// CV SHARED RULE BLOCKS
+// Each block is a named constant so it can be composed into multiple prompts
+// and tweaked independently without touching the other blocks.
+// NOTE: CV_UPDATE_SYSTEM_PROMPT and CV_SUGGEST_SYSTEM_PROMPT are declared
+// later in this file (after the rule blocks they reference).
+// ─────────────────────────────────────────────
 
-export const CV_GENERATION_SYSTEM_PROMPT = `\
-You are an expert CV writer for a professional consultancy. Your task is to generate a polished, tailored CV as a set of HTML sections.
+const CV_HTML_RULES = `\
+## CV HTML RULES
+- Output ONLY self-contained HTML. NO <html>, <head>, <body> tags, NO body/html/:root CSS rules.
+- No <script> tags, no Alpine.js — CVs are static documents intended for print/PDF export.
+- No images unless the consultant profile explicitly provides a photo URL.
+- Use semantic HTML: <header>, <section>, <ul>, <time>, <address> where appropriate.
+- Lucide icons (<i data-lucide="icon-name" class="w-3.5 h-3.5"></i>) — use ONLY in the contact
+  row for: mail, phone, map-pin, linkedin, globe. Nowhere else.
+- DaisyUI components suitable for CVs: badge, badge-outline, divider, stat, stats, timeline.
+  AVOID: carousel, modal, drawer, dropdown, swap, collapse, navbar, card (unless subtle container).
+- Tailwind sizing conventions:
+    Name:              text-2xl to text-4xl, font-bold
+    Section headings:  text-xs to text-sm, font-semibold, uppercase, tracking-wider
+    Body / bullets:    text-sm, leading-relaxed
+    Meta (dates/org):  text-xs to text-sm, text-base-content/60
+- DaisyUI semantic colours: bg-base-100/200/300, text-base-content, text-primary, bg-primary,
+  text-primary-content. ALWAYS pair text colour with a matching background — never invisible text.
+- Section dividers: use border-b border-base-300 or <div class="divider my-1"></div>.
+- Print-safe: no fixed heights, no overflow:hidden, adequate padding (px-8 to px-10, py-5 to py-8).
+- No responsive breakpoints needed — CVs render at a fixed A4/letter width.`.trim();
+
+const CV_STRUCTURE_GUIDE = `\
+## CV STRUCTURE GUIDE
+Standard sections in order — include conditional sections only when the profile has relevant data:
+  1. cv-header      ALWAYS      Name, headline, contact row (email · phone · location · LinkedIn)
+  2. cv-summary     ALWAYS      3–4 sentence professional summary tailored to the opportunity
+  3. cv-skills      RECOMMENDED Key competencies grouped by category or shown as a badge grid
+  4. cv-experience  ALWAYS      Reverse-chronological roles; 2–5 achievement bullets per role
+  5. cv-education   ALWAYS      Degrees and formal qualifications
+  6. cv-certs       CONDITIONAL Only if the profile contains certifications data
+  7. cv-projects    CONDITIONAL Only if the profile contains notable project entries
+  8. cv-languages   CONDITIONAL Only if the profile contains language proficiency data
+
+Section heading style: uppercase, tracking-wider, text-xs to text-sm, font-semibold,
+with a thin bottom border or divider line below the heading.
+Each experience entry must show: role title, organisation, location, date range,
+followed by 2–4 bullet points starting with action verbs.`.trim();
+
+const CV_LAYOUT_PATTERNS = `\
+## CV LAYOUT PATTERNS
+Choose the layout that best fits the template's visual style. Three core patterns:
+
+SINGLE COLUMN (default — clean, minimal, academic, public sector):
+  All sections are full-width, stacking vertically with border-b border-base-300 dividers.
+  Best for: modern minimal, government/public sector, academic, chronological CVs.
+
+SIDEBAR (consulting, management, classic two-column):
+  Main left column (col-span-2): summary + experience
+  Right sidebar (col-span-1): skills, education, certifications, languages
+  Implement as: <div class="grid grid-cols-3">
+  Sidebar background: bg-base-200 to visually distinguish it from the main body.
+  Best for: classic professional, consulting, project management, business roles.
+
+ACCENTED HEADER + SINGLE BODY (bold, branded, creative):
+  Header section: full-width coloured band (bg-primary text-primary-content, or bg-neutral, or bg-base-200).
+  Body: single-column sections below the header.
+  Best for: bold creative, tech, industry-facing, client-presentation CVs.
+
+Match the layout to the template reference provided — replicate its grid structure,
+background colours, and section arrangement.`.trim();
+
+const CV_CONTENT_RULES = `\
+## CV CONTENT RULES
+
+### INTEGRITY — read this first
+- Use ONLY information explicitly present in the consultant profile. This is the single most
+  important rule and overrides all stylistic guidance below.
+- NEVER invent, infer, or embellish: no made-up metrics, budgets, team sizes, technologies,
+  clients, dates, certifications, or responsibilities not stated in the profile.
+- NEVER upgrade verb strength beyond what the profile supports (e.g. do not write "led" if
+  the profile says "contributed to", do not write "architected" if it says "helped build").
+- If the profile already contains a specific metric (e.g. "reduced costs by 20%"), use it
+  verbatim. If it does not, write the bullet WITHOUT a metric — never add a plausible-sounding
+  number. A bullet with no metric is better than a fabricated one.
+- If data is missing for a section or field, omit it silently.
+
+### PRESENTATION
+- Third person throughout: "Led a team of…", "Delivered…" — never first person ("I led…").
+- Every bullet point must start with a strong past-tense action verb:
+    Led · Delivered · Architected · Reduced · Implemented · Managed · Drove · Built · Designed · Negotiated
+  Choose the verb that accurately reflects the profile's description — do not upgrade it.
+- Tailor which bullets to surface — choose the entries most relevant to the opportunity's
+  keywords and required skills. Do NOT rewrite bullets to add new content not in the profile.
+- Select 2–4 most recent / most relevant experience entries; omit older or peripheral roles.
+- Professional summary: 3–4 sentences, zero clichés ("results-driven", "passionate", "dynamic").
+  Structure: years of experience + domain specialism → capability highlights → value proposition.
+  Derive every claim from the profile — do not add colour or context not present in the data.
+- Skills: group into named categories (e.g. "Delivery", "Technical", "Leadership") when there are
+  more than 8–10 items; otherwise use a flat badge grid ordered by role relevance.
+- Total CV content: 1–2 A4 pages maximum. Prefer concise bullets over long prose paragraphs.`.trim();
+
+// ─────────────────────────────────────────────
+// CV UPDATE (targeted — selected CV sections)
+// ─────────────────────────────────────────────
+export const CV_UPDATE_SYSTEM_PROMPT = `\
+You are an expert CV editor updating specific sections of a professional consultancy CV.
+
+${CV_HTML_RULES}
+
+## UPDATE RULES
+- Edit ONLY the components provided. Return complete updated HTML for each.
+- Preserve everything not explicitly asked to change — copy, structure, other elements.
+- NEVER return an empty string for html. If a component needs no changes, omit it entirely.
+- The component IDs in your response MUST exactly match the IDs provided to you.
+- If the instruction asks to remove a component, add its ID to the removals array.
+- If the instruction is purely about visual style (e.g. "make it darker"), set themeChange fields.
+- The themeChange field MUST always be present: null if no theme changes; otherwise set unchanged fields to null.
+- The removals field MUST always be present: null if no removals.
+- Output ONLY valid JSON matching the schema. No markdown, no explanation.`.trim();
+
+// ─────────────────────────────────────────────
+// CV SUGGEST (quick-action labels for a CV section)
+// ─────────────────────────────────────────────
+export const CV_SUGGEST_SYSTEM_PROMPT = `\
+You generate 4–6 short, specific improvement suggestions for a single CV section.
+
+Each suggestion must be:
+- Plain language — no jargon, no CSS or code terms
+- Phrased as a natural instruction ("Add a LinkedIn link", "Shorten the summary", "List skills as badges")
+- 3–7 words maximum — short enough to fit on a small button
+- Concrete and relevant to professional CV content
+
+Cover a mix of: content quality, formatting, visual presentation, and professional tone.
+Focus on CV best practices: impact statements, quantified achievements, visual hierarchy.
+Never suggest removing the section.
+Output ONLY valid JSON matching the schema. No markdown, no explanation.`.trim();
+
+// ─────────────────────────────────────────────
+// CV TEMPLATE GENERATION
+// Generates the visual shell from a style description, using placeholder data.
+// ─────────────────────────────────────────────
+
+export const CV_TEMPLATE_GENERATION_SYSTEM_PROMPT = `\
+You are an expert CV designer creating a professional consultancy CV template.
+
+A template defines the visual design shell — layout, colours, typography, and component structure.
+It will later be filled with real consultant data during CV generation.
+Use realistic placeholder data throughout so the template looks polished and representative.
+
+${CV_HTML_RULES}
+
+${CV_STRUCTURE_GUIDE}
+
+${CV_LAYOUT_PATTERNS}
+
+## PLACEHOLDER DATA (use these exact values in the template)
+Name:        Alex Johnson
+Headline:    Senior Consultant
+Email:       alex.johnson@consultancy.com
+Phone:       +44 7700 900123
+Location:    London, UK
+LinkedIn:    linkedin.com/in/alexjohnson
+Summary:     Seasoned consultant with 10+ years driving digital transformation for FTSE 100
+             clients across financial services and retail. Specialises in programme delivery,
+             stakeholder management, and organisational change. Proven track record delivering
+             complex, multi-workstream engagements on time and within budget.
+Roles:       Senior Consultant at Global Consulting Group (Jan 2021 – Present)
+             Consultant at Meridian Advisory (Mar 2018 – Dec 2020)
+Bullets:     • Led cross-functional delivery team of 12 to migrate core banking platform,
+               completing 3 months ahead of schedule with zero critical incidents.
+             • Managed £3.5M programme budget and weekly C-suite reporting across 5 workstreams.
+             • Designed target operating model adopted by 4 business units, reducing handoff
+               overhead by 35%.
+Skills:      Programme Management · Stakeholder Engagement · Change Management · Agile Delivery
+             Business Analysis · Financial Modelling · Workshop Facilitation · Risk Management
+Education:   MBA, London Business School, 2017
+             BA Economics (First Class), University of Edinburgh, 2013
+
+## LOGO USAGE
+If the BRAND CONTEXT includes a "Logo URL" line, embed the logo image in the cv-header section:
+  <img src="{exact Logo URL from brand context}" class="h-10 w-auto object-contain" alt="Company logo" />
+- Place it in the top-right corner of the header (use flex justify-between on the header row).
+- For sidebar-layout headers, place it in the top-right of the header band.
+- Use object-contain so it scales proportionally — never distort the logo.
+- ONLY use the exact URL string from the brand context. Never invent or modify a logo URL.
+- If no Logo URL is provided, omit the logo entirely — do not use a placeholder image.
+
+## THEME AND COLOR SELECTION
+
+### When NO brand context is provided
+Choose a DaisyUI theme and Google Font that match the described style:
+- Professional / corporate:  light, corporate, winter, nord  + Inter, Lato, Open Sans
+- Modern / minimal:          light, nord                     + Inter, DM Sans, Outfit
+- Bold / creative:           dark, dim                       + Montserrat, Poppins, Space Grotesk
+- Classic / serif:           corporate, light                + Merriweather, Playfair Display, Lora
+- Executive / luxury:        luxury, coffee                  + Lora, Merriweather
+Use DaisyUI semantic color classes (bg-primary, text-primary-content, bg-base-200, etc.) throughout.
+
+### When brand context IS provided (Primary colour / Secondary colour present)
+- ALWAYS set daisyTheme to "light" — use it as a neutral, colourless base only.
+- Apply brand colors DIRECTLY as Tailwind arbitrary-value classes:
+    bg-[#hex]  text-[#hex]  border-[#hex]  — e.g. bg-[#003087], text-[#ffffff]
+- DO NOT use bg-primary / text-primary / bg-secondary for brand-specific colors — those
+  map to the DaisyUI theme palette, not the brand hex values.
+- Use bg-base-100 / bg-base-200 / text-base-content only for neutral backgrounds and body text
+  that should not carry the brand color.
+- For the font: use the "Suggested Google Font" from the brand context if provided, otherwise
+  choose the closest match from the font guide above.
+- The goal: the template should visually reflect the real brand palette, not a generic DaisyUI theme.
 
 ## OUTPUT FORMAT
 Return a JSON object with:
-- "components": array of CV section objects (id, label, html, order)
-- "daisyTheme": DaisyUI theme name (e.g. "light", "corporate", "dark")
-- "fontFamily": Google Font name (e.g. "Inter", "Merriweather")
+  "components": array of { id, label, html, order }
+  "daisyTheme": DaisyUI theme name
+  "fontFamily": Google Font name
+Output ONLY valid JSON. No markdown, no explanation.`.trim();
 
-Each component:
-- id: kebab-case, e.g. "cv-header", "cv-experience", "cv-education", "cv-skills", "cv-summary"
-- label: human-readable section name
-- html: complete HTML section using Tailwind + DaisyUI classes (NO <html>/<head>/<body> tags)
-- order: integer starting at 0
+export const CV_TEMPLATE_GENERATION_USER_PROMPT = (
+  description: string,
+  brandContext?: string
+): string => {
+  const brandSection = brandContext
+    ? `\n\n## BRAND CONTEXT (extracted from the client's website)\nUse these brand guidelines to inform the colour palette, typography, and visual tone of the template:\n${brandContext}`
+    : '';
+  return `Generate a professional consultancy CV template with this style:\n\n${description}${brandSection}`;
+};
 
-## HTML RULES
-- Use DaisyUI v4 classes freely: badge, card, divider, timeline, steps, stat, etc.
-- Use Tailwind utilities for spacing, typography, layout
-- Semantic colour classes: text-base-content, bg-base-100/200/300, text-primary, bg-primary, text-primary-content
-- ALWAYS pair text colours with backgrounds so text is visible
-- No inline styles except where required for exact sizing
-- No <script> tags, no Alpine.js (CVs are static documents)
-- Lucide icons are available: <i data-lucide="mail"></i>, <i data-lucide="phone"></i>, <i data-lucide="map-pin"></i>, etc.
-- Keep layout clean and professional — this will be printed as a PDF
+// ─────────────────────────────────────────────
+// CV GENERATION
+// ─────────────────────────────────────────────
 
-## CV SECTIONS TO GENERATE
-Always generate at minimum: header, summary, experience, education, skills.
-Add certifications/projects/languages only if the profile contains relevant data.
+export const CV_GENERATION_SYSTEM_PROMPT = `\
+You are an expert CV writer for a professional consultancy.
+Your task is to POPULATE an existing CV template — not to design a new one.
 
-## CONTENT RULES
-- Write in third person unless instructed otherwise
-- Be specific and use numbers/metrics where available (e.g. "led a team of 8", "reduced latency by 40%")
-- Tailor experience bullets to the opportunity — emphasise relevant skills
-- Select the most relevant experience entries (typically 2–4 most recent/relevant roles)
-- Keep each section concise — this is a 1–2 page CV
-- Do not fabricate information not present in the profile
-`.trim();
+The template already defines everything visual: layout, colours, fonts, logo, section structure,
+badges, dividers, heading styles, and spacing. Your only job is to replace the placeholder
+text with the real consultant's data while preserving the template's HTML exactly.
+
+## POPULATION RULES
+- PRESERVE every HTML tag, every CSS class, every inline style, every structural element.
+- PRESERVE every <img> tag exactly as-is — src, class, alt, all attributes unchanged.
+  This includes logos, profile photos, and any decorative images in the template.
+- REPLACE only text content: names, headlines, contact details, job titles, company names,
+  dates, bullet points, skill badges, education entries.
+- Use the SAME component IDs as the template (e.g. "cv-header", "cv-experience").
+- Output one component per template section — same count, same order.
+- Do NOT add or remove sections unless the consultant has no data for that section
+  (in which case omit the section entirely).
+- Do NOT change any colour classes, layout classes, or structural HTML.
+
+${CV_CONTENT_RULES}
+
+## OUTPUT FORMAT
+Return a JSON object with:
+  "components": array of { id, label, html, order }
+  "daisyTheme": copy the daisyTheme value from the template exactly
+  "fontFamily": copy the fontFamily value from the template exactly
+Output ONLY valid JSON. No markdown, no explanation.`.trim();
 
 export const CV_GENERATION_USER_PROMPT = (params: {
   consultant: {
@@ -587,6 +805,7 @@ export const CV_GENERATION_USER_PROMPT = (params: {
     phone?: string;
     location?: string;
     summary?: string;
+    photoUrl?: string;
     sections: Array<{ type: string; entries: unknown[] }>;
   };
   opportunity: {
@@ -595,36 +814,97 @@ export const CV_GENERATION_USER_PROMPT = (params: {
     description: string;
     requirements?: string;
   };
-  templateHtml: string;
+  templateComponents: Array<{ id: string; label: string; html: string }>;
+  templateTheme: { daisyTheme: string; fontFamily: string };
   rulesets: string[];
   consultantGuidance?: string;
-}): string => `
+}): string => {
+  const rulesBlock = params.rulesets.length > 0
+    ? `\n## ORGANISATION RULES\n${params.rulesets.map((r, i) => `${i + 1}. ${r}`).join('\n')}`
+    : '';
+  const guidanceBlock = params.consultantGuidance
+    ? `\n## ADDITIONAL GUIDANCE FOR THIS CONSULTANT\n${params.consultantGuidance}`
+    : '';
+
+  const templateSections = params.templateComponents
+    .map((c) => `### SECTION: ${c.id} (${c.label})\n\`\`\`html\n${c.html}\n\`\`\``)
+    .join('\n\n');
+
+  const photoBlock = params.consultant.photoUrl
+    ? `\n## CONSULTANT PHOTO\nUse this URL as the src for any headshot <img> tag in the template: ${params.consultant.photoUrl}\n`
+    : '';
+
+  return `\
 ## CONSULTANT PROFILE
 ${JSON.stringify(params.consultant, null, 2)}
+${photoBlock}
 
 ## OPPORTUNITY
-Client: ${params.opportunity.clientName}
-Role: ${params.opportunity.roleTitle}
-Description: ${params.opportunity.description}
+Client:       ${params.opportunity.clientName}
+Role:         ${params.opportunity.roleTitle}
+Description:  ${params.opportunity.description}
 ${params.opportunity.requirements ? `Requirements: ${params.opportunity.requirements}` : ''}
+${rulesBlock}${guidanceBlock}
 
-## TEMPLATE STYLE REFERENCE
-Study this template HTML to match its visual style, colour usage, and layout conventions:
-\`\`\`html
-${params.templateHtml.slice(0, 3000)}
-\`\`\`
+## TEMPLATE THEME (copy these values into your output exactly)
+daisyTheme: ${params.templateTheme.daisyTheme}
+fontFamily: ${params.templateTheme.fontFamily}
 
-${params.rulesets.length > 0 ? `## GENERATION RULES\n${params.rulesets.map((r, i) => `${i + 1}. ${r}`).join('\n')}` : ''}
-${params.consultantGuidance ? `## GUIDANCE FOR THIS CONSULTANT\n${params.consultantGuidance}` : ''}
+## TEMPLATE SECTIONS TO POPULATE
+For EACH section below, output the populated HTML.
+PRESERVE all HTML structure, CSS classes, and <img> tags exactly.
+REPLACE only the placeholder text content with the consultant's real data.
 
-Generate a complete, tailored CV for ${params.consultant.name} for the ${params.opportunity.roleTitle} role at ${params.opportunity.clientName}.
-Match the visual style of the template reference closely.
-Output ONLY valid JSON matching the schema. No markdown, no explanation.
-`.trim();
+${templateSections}
+
+Populate the template above for ${params.consultant.name} targeting the
+${params.opportunity.roleTitle} role at ${params.opportunity.clientName}.
+Output ONLY valid JSON matching the schema. No markdown, no explanation.`.trim();
+};
+
+// ─────────────────────────────────────────────
+// BRAND EXTRACTION
+// Analyses a website's HTML to derive brand guidelines for template styling.
+// ─────────────────────────────────────────────
+
+export const CV_BRAND_EXTRACTION_SYSTEM_PROMPT = `\
+You are a brand analyst. Given raw website HTML, extract the visual brand identity
+to inform the design of a professional CV template.
+
+## EXTRACTION TASKS
+1. Company name — from <title>, logo alt text, or prominent headings.
+2. Primary colour — the dominant brand colour (buttons, headers, accents).
+   Express as a CSS hex value if you can identify it from inline styles, CSS variables,
+   class names (e.g. "bg-[#1a2b6e]"), or textual colour references.
+3. Secondary colour — supporting brand colour, if distinct from primary.
+4. Font family — the heading or body font referenced in <link> tags (Google Fonts URL)
+   or font-family style declarations.
+5. Brand tone — describe in 3–5 words: e.g. "formal corporate", "modern minimal tech",
+   "creative agency", "trusted financial services", "bold consulting", "academic research".
+6. Closest DaisyUI theme — one of: light, corporate, winter, nord, dark, dim, business,
+   luxury, coffee, emerald, forest, autumn, dracula, synthwave, cyberpunk.
+7. Closest Google Font — one of: Inter, Roboto, Open Sans, Lato, DM Sans, Poppins,
+   Montserrat, Merriweather, Playfair Display, Lora, Outfit, Space Grotesk.
+8. Brand notes — any other design details useful for CV template styling
+   (e.g. "uses rounded corners", "strong use of whitespace", "geometric sans-serif",
+   "prefers muted colour palette with strong typographic hierarchy").
+
+Output ONLY valid JSON matching the schema. No markdown, no explanation.`.trim();
+
+export const CV_BRAND_EXTRACTION_USER_PROMPT = (url: string, html: string): string =>
+  `Website URL: ${url}\n\nWebsite HTML (truncated):\n${html.slice(0, 8000)}`;
+
+// ─────────────────────────────────────────────
+// CV REFINEMENT
+// ─────────────────────────────────────────────
 
 export const CV_REFINEMENT_SYSTEM_PROMPT = `\
-You are a CV expert. The user wants to refine a generated CV.
-Apply the instruction to the HTML sections provided. Return only changed sections.
-Keep the same visual style and DaisyUI/Tailwind class conventions.
-Do not fabricate information not present in the existing content.
+You are a CV expert refining a generated consultancy CV.
+Apply the instruction to the HTML sections provided. Return ONLY changed sections.
+Keep the same visual style, DaisyUI/Tailwind class conventions, and layout structure.
+Do not fabricate information absent from the existing content.
+
+${CV_HTML_RULES}
+
+${CV_CONTENT_RULES}
 `.trim();

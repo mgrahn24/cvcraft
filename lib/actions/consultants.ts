@@ -39,6 +39,7 @@ export async function updateConsultant(id: string, formData: FormData) {
       phone: (formData.get('phone') as string | null) || undefined,
       location: (formData.get('location') as string | null) || undefined,
       summary: (formData.get('summary') as string | null) || undefined,
+      photoUrl: (formData.get('photoUrl') as string | null) || undefined,
       updatedAt: new Date(),
     })
     .where(eq(consultants.id, id));

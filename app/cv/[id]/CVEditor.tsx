@@ -1,16 +1,17 @@
 'use client';
 
-import { useEffect, useState, useTransition } from 'react';
-import { useEditorStore } from '@/lib/store/editorStore';
+import { useEffect, useRef, useState, useTransition } from 'react';
+import { useEditorStore, selectCanUndo, selectCanRedo } from '@/lib/store/editorStore';
 import { Canvas } from '@/components/editor/Canvas';
 import { EditPanel } from '@/components/editor/EditPanel';
 import { forkCVVersion, saveCVVersion, deleteCVVersion } from '@/lib/actions/cvVersions';
-import { buildSinglePageHtml, downloadStandaloneHtml } from '@/lib/utils/storage';
+import { downloadStandaloneHtml } from '@/lib/utils/storage';
 import Link from 'next/link';
 import {
-  ArrowLeft, Download, GitBranch, Printer, Save, Trash2,
+  ArrowLeft, Download, GitBranch, Loader2, Redo2, Save, Trash2, Undo2,
 } from 'lucide-react';
 import type { Component, Theme, PageState, PageEntry } from '@/types';
+import { StylePopover } from '@/components/editor/StylePopover';
 
 interface Props {
   id: string;
@@ -22,11 +23,16 @@ interface Props {
 }
 
 export function CVEditor({ id, components, theme, consultantName, opportunityLabel, opportunityId }: Props) {
-  const setPage = useEditorStore((s) => s.setPage);
   const setProject = useEditorStore((s) => s.setProject);
   const page = useEditorStore((s) => s.page);
+  const undo = useEditorStore((s) => s.undo);
+  const redo = useEditorStore((s) => s.redo);
+  const canUndo = useEditorStore(selectCanUndo);
+  const canRedo = useEditorStore(selectCanRedo);
   const [isPending, startTransition] = useTransition();
   const [saved, setSaved] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+  const canvasWrapperRef = useRef<HTMLDivElement>(null);
 
   // Load CV into editor store on mount
   useEffect(() => {
@@ -55,8 +61,60 @@ export function CVEditor({ id, components, theme, consultantName, opportunityLab
     });
   }
 
-  function handleExportPdf() {
-    window.print();
+  async function handleExportPdf() {
+    if (!canvasWrapperRef.current) return;
+    setIsExporting(true);
+    try {
+      const [{ default: html2canvas }, { jsPDF }] = await Promise.all([
+        import('html2canvas'),
+        import('jspdf'),
+      ]);
+      const el = canvasWrapperRef.current;
+      const canvas = await html2canvas(el, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: '#ffffff',
+        logging: false,
+        onclone: (_clonedDoc, clonedEl) => {
+          // DaisyUI v4 uses oklch() which html2canvas can't parse.
+          // Inline browser-resolved (rgb) computed colors on every cloned element.
+          const origNodes = [el, ...Array.from(el.querySelectorAll('*'))];
+          const cloneNodes = [clonedEl, ...Array.from(clonedEl.querySelectorAll('*'))];
+          const props = [
+            'color', 'background-color',
+            'border-top-color', 'border-right-color', 'border-bottom-color', 'border-left-color',
+            'outline-color', 'text-decoration-color', 'fill', 'stroke',
+          ];
+          origNodes.forEach((orig, i) => {
+            const clone = cloneNodes[i] as HTMLElement;
+            if (!clone?.style) return;
+            const cs = window.getComputedStyle(orig);
+            for (const prop of props) {
+              const val = cs.getPropertyValue(prop);
+              if (val) clone.style.setProperty(prop, val, 'important');
+            }
+          });
+        },
+      });
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+      const pageW = pdf.internal.pageSize.getWidth();
+      const pageH = pdf.internal.pageSize.getHeight();
+      const imgH = (canvas.height / canvas.width) * pageW;
+      let y = 0;
+      let remaining = imgH;
+      let first = true;
+      while (remaining > 0) {
+        if (!first) pdf.addPage();
+        pdf.addImage(imgData, 'PNG', 0, -y, pageW, imgH);
+        y += pageH;
+        remaining -= pageH;
+        first = false;
+      }
+      pdf.save(`${consultantName}-CV.pdf`);
+    } finally {
+      setIsExporting(false);
+    }
   }
 
   function handleExportHtml() {
@@ -97,6 +155,25 @@ export function CVEditor({ id, components, theme, consultantName, opportunityLab
 
         <div className="flex items-center gap-1.5">
           <button
+            onClick={undo}
+            disabled={!canUndo}
+            className="p-1.5 rounded text-gray-500 hover:bg-gray-100 transition-colors disabled:opacity-30"
+            title="Undo (Ctrl+Z)"
+          >
+            <Undo2 size={13} />
+          </button>
+          <button
+            onClick={redo}
+            disabled={!canRedo}
+            className="p-1.5 rounded text-gray-500 hover:bg-gray-100 transition-colors disabled:opacity-30"
+            title="Redo (Ctrl+Shift+Z)"
+          >
+            <Redo2 size={13} />
+          </button>
+          <div className="h-4 w-px bg-gray-200" />
+          <StylePopover />
+          <div className="h-4 w-px bg-gray-200" />
+          <button
             onClick={handleSave}
             disabled={isPending}
             className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded text-xs font-medium text-gray-600 hover:bg-gray-100 transition-colors disabled:opacity-50"
@@ -115,10 +192,12 @@ export function CVEditor({ id, components, theme, consultantName, opportunityLab
           </button>
           <button
             onClick={handleExportPdf}
-            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded text-xs font-medium text-gray-600 hover:bg-gray-100 transition-colors"
-            title="Print / Export as PDF"
+            disabled={isExporting}
+            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded text-xs font-medium text-gray-600 hover:bg-gray-100 transition-colors disabled:opacity-50"
+            title="Export as PDF"
           >
-            <Printer size={13} /> PDF
+            {isExporting ? <Loader2 size={13} className="animate-spin" /> : <Download size={13} />}
+            {isExporting ? 'Exporting…' : 'PDF'}
           </button>
           <button
             onClick={handleExportHtml}
@@ -140,9 +219,11 @@ export function CVEditor({ id, components, theme, consultantName, opportunityLab
 
       {/* Editor body */}
       <div className="flex flex-1 overflow-hidden bg-gray-100">
-        {/* Canvas */}
-        <main className="flex-1 flex flex-col overflow-hidden min-w-0">
-          <Canvas />
+        {/* Canvas — A4-width constrained for WYSIWYG PDF fidelity */}
+        <main className="flex-1 overflow-auto bg-gray-100 flex flex-col items-center py-6 min-w-0">
+          <div ref={canvasWrapperRef} className="shadow-2xl ring-1 ring-black/5 bg-white flex-shrink-0" style={{ width: '210mm', minHeight: '297mm' }}>
+            <Canvas />
+          </div>
         </main>
 
         {/* Right panel */}
@@ -159,13 +240,6 @@ export function CVEditor({ id, components, theme, consultantName, opportunityLab
         </aside>
       </div>
 
-      {/* Print styles — hide editor chrome, show only the CV */}
-      <style>{`
-        @media print {
-          .print\\:hidden { display: none !important; }
-          body { margin: 0; }
-        }
-      `}</style>
     </div>
   );
 }

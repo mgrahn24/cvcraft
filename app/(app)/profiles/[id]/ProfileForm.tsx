@@ -1,17 +1,84 @@
 'use client';
 
-import { useTransition } from 'react';
+import { useState, useTransition, useRef } from 'react';
 import { updateConsultant, deleteConsultant } from '@/lib/actions/consultants';
 import type { ConsultantRow } from '@/lib/db/schema';
+import { User, Upload, X } from 'lucide-react';
 
 export function ProfileForm({ consultant }: { consultant: ConsultantRow }) {
   const [isPending, startTransition] = useTransition();
+  const [photoUrl, setPhotoUrl] = useState(consultant.photoUrl ?? '');
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  async function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      const res = await fetch('/api/upload-photo', { method: 'POST', body: fd });
+      if (!res.ok) throw new Error(await res.text());
+      const { url } = await res.json() as { url: string };
+      setPhotoUrl(url);
+    } catch (err) {
+      console.error('Photo upload failed:', err);
+    } finally {
+      setUploading(false);
+    }
+  }
 
   return (
     <form
       action={(fd) => startTransition(() => updateConsultant(consultant.id, fd))}
       className="space-y-4"
     >
+      {/* Photo upload */}
+      <div className="flex items-center gap-4">
+        <div className="relative group">
+          <div
+            className="w-20 h-20 rounded-full border-2 border-dashed border-border flex items-center justify-center overflow-hidden bg-muted cursor-pointer"
+            onClick={() => fileInputRef.current?.click()}
+          >
+            {photoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={photoUrl} alt="Headshot" className="w-full h-full object-cover" />
+            ) : (
+              <User size={32} className="text-muted-foreground" />
+            )}
+            <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+              {uploading ? (
+                <span className="text-white text-xs">Uploading…</span>
+              ) : (
+                <Upload size={18} className="text-white" />
+              )}
+            </div>
+          </div>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handlePhotoChange}
+          />
+        </div>
+        <div className="flex-1">
+          <p className="text-xs font-medium">Profile photo</p>
+          <p className="text-xs text-muted-foreground mt-0.5">Used as headshot in generated CVs</p>
+          {photoUrl && (
+            <button
+              type="button"
+              onClick={() => setPhotoUrl('')}
+              className="mt-1 inline-flex items-center gap-1 text-xs text-destructive hover:underline"
+            >
+              <X size={11} /> Remove photo
+            </button>
+          )}
+        </div>
+        <input type="hidden" name="photoUrl" value={photoUrl} />
+      </div>
+
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label className="block text-xs font-medium mb-1">Full name *</label>

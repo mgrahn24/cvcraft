@@ -58,7 +58,6 @@ export async function POST(req: Request) {
     }
 
     const templateComponents = template.components as Component[];
-    const templateHtml = templateComponents.map((c) => c.html).join('\n');
     const templateTheme = (template.theme as Theme | null) ?? { daisyTheme: 'light', fontFamily: 'Inter' };
 
     const guidance = body.consultantGuidance || guidanceRows[0]?.guidance;
@@ -75,6 +74,7 @@ export async function POST(req: Request) {
           phone: consultant.phone ?? undefined,
           location: consultant.location ?? undefined,
           summary: consultant.summary ?? undefined,
+          photoUrl: consultant.photoUrl ?? undefined,
           sections: sections.map((s) => ({
             type: s.type,
             entries: s.entries as unknown[],
@@ -86,7 +86,12 @@ export async function POST(req: Request) {
           description: opportunity.description,
           requirements: opportunity.requirements ?? undefined,
         },
-        templateHtml,
+        templateComponents: templateComponents.map((c) => ({
+          id: c.id,
+          label: c.label,
+          html: c.html,
+        })),
+        templateTheme,
         rulesets: rulesetRules,
         consultantGuidance: guidance,
       }),
@@ -101,9 +106,10 @@ export async function POST(req: Request) {
       order: i,
     }));
 
+    // Always use the template's theme — the LLM is instructed to echo it but we enforce it here too
     const theme: Theme = {
-      daisyTheme: (object.daisyTheme as Theme['daisyTheme']) ?? templateTheme.daisyTheme,
-      fontFamily: (object.fontFamily as Theme['fontFamily']) ?? templateTheme.fontFamily,
+      daisyTheme: templateTheme.daisyTheme,
+      fontFamily: templateTheme.fontFamily,
     };
 
     // Save as CV version

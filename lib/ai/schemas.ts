@@ -59,9 +59,21 @@ export const cvGenerationSchema = z.object({
   fontFamily: z.string().describe('Google Font for the CV'),
 });
 
+export const cvBrandExtractionSchema = z.object({
+  companyName: z.string().nullable().describe('Company name extracted from the page; null if not found'),
+  primaryColor: z.string().nullable().describe('Primary brand colour as a hex value e.g. "#1a2b6e"; null if not identifiable'),
+  secondaryColor: z.string().nullable().describe('Secondary brand colour as a hex value; null if not identifiable'),
+  fontFamily: z.string().nullable().describe('Primary font family name from the page; null if not found'),
+  tone: z.string().describe('Brand tone in 3–5 words e.g. "formal corporate", "modern minimal tech"'),
+  suggestedDaisyTheme: z.string().describe('DaisyUI theme closest to the brand aesthetic'),
+  suggestedFont: z.string().describe('Google Font closest to the brand typography'),
+  brandNotes: z.string().nullable().describe('Additional design notes useful for CV template styling; null if none'),
+});
+
 export type ProfileExtractionSchema = z.infer<typeof profileExtractionSchema>;
 export type ContentSelectionSchema = z.infer<typeof contentSelectionSchema>;
 export type CVGenerationSchema = z.infer<typeof cvGenerationSchema>;
+export type CVBrandExtractionSchema = z.infer<typeof cvBrandExtractionSchema>;
 
 // COMPONENT_TYPES is a const tuple — z.enum accepts it directly
 export const componentTypeEnum = z.enum(COMPONENT_TYPES);

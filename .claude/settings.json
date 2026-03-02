@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/git/blitz/**)",
+      "Bash(xargs grep -l \"window.print\\\\|@media print\")",
+      "Bash(npm install html2canvas jspdf)"
+    ]
+  }
+}

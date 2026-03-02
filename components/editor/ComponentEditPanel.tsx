@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import type { Component } from '@/types';
 
-const PINNED_ACTIONS = ['Redesign this', 'Make it simpler', 'Make it more detailed'];
+const PINNED_ACTIONS = ['Improve the formatting', 'Make it more concise', 'Strengthen the impact'];
 
 export function ComponentEditPanel() {
   const [instruction, setInstruction] = useState('');

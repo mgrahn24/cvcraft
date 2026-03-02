@@ -11,6 +11,7 @@ export const consultants = pgTable('consultants', {
   phone: varchar('phone', { length: 50 }),
   location: varchar('location', { length: 255 }),
   summary: text('summary'),
+  photoUrl: varchar('photo_url', { length: 1000 }),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });

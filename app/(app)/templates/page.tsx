@@ -6,6 +6,7 @@ import { seedBuiltInTemplates } from '@/lib/db/seed';
 import { desc } from 'drizzle-orm';
 import { Plus } from 'lucide-react';
 import type { Component, Theme } from '@/types';
+import { DeleteTemplateButton } from './[id]/DeleteTemplateButton';
 
 export default async function TemplatesPage() {
   await seedBuiltInTemplates();
@@ -59,6 +60,7 @@ export default async function TemplatesPage() {
                     >
                       Edit
                     </Link>
+                    <DeleteTemplateButton id={t.id} isBuiltIn={t.isBuiltIn} compact />
                   </div>
                 </div>
                 <span className="text-xs text-muted-foreground capitalize">{t.category}</span>

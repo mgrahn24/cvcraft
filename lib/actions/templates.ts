@@ -53,6 +53,19 @@ export async function updateTemplate(
   redirect(`/templates/${id}`);
 }
 
+/** Save components + theme in-place without redirecting (used by the canvas editor). */
+export async function saveTemplateComponents(
+  id: string,
+  components: Component[],
+  theme: Theme,
+) {
+  await db
+    .update(cvTemplates)
+    .set({ components, theme })
+    .where(eq(cvTemplates.id, id));
+  revalidatePath(`/templates/${id}`);
+}
+
 export async function deleteTemplate(id: string) {
   await db.delete(cvTemplates).where(eq(cvTemplates.id, id));
   revalidatePath('/templates');

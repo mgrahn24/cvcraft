@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import { Plus, Trash2, ChevronDown, ChevronRight } from 'lucide-react';
+import { Wand2, Link, CheckCircle } from 'lucide-react';
 import { DAISY_THEMES, FONT_FAMILIES } from '@/types';
 import type { Component, Theme, DaisyTheme, FontFamily } from '@/types';
 import { createTemplate, updateTemplate } from '@/lib/actions/templates';
@@ -13,7 +13,7 @@ interface Section {
 }
 
 interface Props {
-  templateId?: string; // undefined = new template
+  templateId?: string;
   initialName?: string;
   initialCategory?: string;
   initialTheme?: Theme;
@@ -33,43 +33,50 @@ export function TemplateForm({
   const [category, setCategory] = useState(initialCategory);
   const [daisyTheme, setDaisyTheme] = useState<DaisyTheme>(initialTheme.daisyTheme);
   const [fontFamily, setFontFamily] = useState<FontFamily>(initialTheme.fontFamily);
-  const [sections, setSections] = useState<Section[]>(
-    initialSections.length > 0 ? initialSections : [newSection()]
-  );
-  const [expanded, setExpanded] = useState<Set<string>>(new Set([sections[0]?.id]));
+  const [sections, setSections] = useState<Section[]>(initialSections);
+
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState('');
 
-  function newSection(): Section {
-    return { id: `section-${crypto.randomUUID().slice(0, 8)}`, label: '', html: '' };
-  }
+  // AI generation
+  const [genDescription, setGenDescription] = useState('');
+  const [genBrandUrl, setGenBrandUrl] = useState('');
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [genError, setGenError] = useState('');
+  const [extractedBrand, setExtractedBrand] = useState<string | null>(null);
 
-  function addSection() {
-    const s = newSection();
-    setSections((prev) => [...prev, s]);
-    setExpanded((prev) => new Set([...prev, s.id]));
-  }
-
-  function removeSection(id: string) {
-    setSections((prev) => prev.filter((s) => s.id !== id));
-    setExpanded((prev) => { const next = new Set(prev); next.delete(id); return next; });
-  }
-
-  function updateSection(id: string, patch: Partial<Section>) {
-    setSections((prev) => prev.map((s) => (s.id === id ? { ...s, ...patch } : s)));
-  }
-
-  function toggleExpanded(id: string) {
-    setExpanded((prev) => {
-      const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
-      return next;
-    });
+  async function generateFromAI() {
+    if (!genDescription.trim()) return;
+    setIsGenerating(true);
+    setGenError('');
+    setExtractedBrand(null);
+    try {
+      const res = await fetch('/api/generate-template', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ description: genDescription, brandUrl: genBrandUrl || undefined }),
+      });
+      if (!res.ok) throw new Error(await res.text());
+      const data = await res.json() as {
+        components: Array<{ id: string; label: string; html: string }>;
+        daisyTheme: string;
+        fontFamily: string;
+        brandContext?: string;
+      };
+      setSections(data.components.map((c) => ({ id: c.id, label: c.label, html: c.html })));
+      setDaisyTheme(data.daisyTheme as DaisyTheme);
+      setFontFamily(data.fontFamily as FontFamily);
+      if (data.brandContext) setExtractedBrand(data.brandContext);
+    } catch (e) {
+      setGenError(String(e));
+    } finally {
+      setIsGenerating(false);
+    }
   }
 
   function save() {
     if (!name.trim()) { setError('Name is required'); return; }
-    if (sections.some((s) => !s.html.trim())) { setError('All sections need HTML content'); return; }
+    if (sections.length === 0) { setError('Generate a template first'); return; }
     setError('');
 
     const components: Component[] = sections.map((s, i) => ({
@@ -79,7 +86,7 @@ export function TemplateForm({
       html: s.html,
       order: i,
     }));
-    const theme: Theme = { daisyTheme: daisyTheme as Theme['daisyTheme'], fontFamily: fontFamily as Theme['fontFamily'] };
+    const theme: Theme = { daisyTheme, fontFamily };
 
     startTransition(() => {
       if (templateId) {
@@ -94,111 +101,115 @@ export function TemplateForm({
 
   return (
     <div className="space-y-6">
-      {/* Basic info */}
-      <div className="grid grid-cols-2 gap-4">
+      {/* AI Generator */}
+      <div className="space-y-3">
         <div>
-          <label className="block text-sm font-medium mb-1.5">Name <span className="text-destructive">*</span></label>
-          <input value={name} onChange={(e) => setName(e.target.value)} className={inputClass} placeholder="Modern Minimal" />
+          <label className="block text-sm font-medium mb-1.5">
+            Style description <span className="text-destructive">*</span>
+          </label>
+          <textarea
+            value={genDescription}
+            onChange={(e) => setGenDescription(e.target.value)}
+            rows={3}
+            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring resize-none"
+            placeholder="e.g. Clean single-column with a navy accent header, classic consulting style, serif font"
+          />
         </div>
-        <div>
-          <label className="block text-sm font-medium mb-1.5">Category</label>
-          <input value={category} onChange={(e) => setCategory(e.target.value)} className={inputClass} placeholder="professional" />
-        </div>
-      </div>
 
-      {/* Theme */}
-      <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium mb-1.5">DaisyUI Theme</label>
-          <select value={daisyTheme} onChange={(e) => setDaisyTheme(e.target.value as DaisyTheme)} className={inputClass}>
-            {DAISY_THEMES.map((t) => <option key={t} value={t}>{t}</option>)}
-          </select>
+          <label className="block text-sm font-medium mb-1.5">
+            <span className="inline-flex items-center gap-1.5"><Link size={13} /> Brand URL <span className="text-muted-foreground font-normal">(optional)</span></span>
+          </label>
+          <input
+            type="url"
+            value={genBrandUrl}
+            onChange={(e) => setGenBrandUrl(e.target.value)}
+            className={inputClass}
+            placeholder="https://example.com — colours, fonts, and brand tone will be extracted"
+          />
         </div>
-        <div>
-          <label className="block text-sm font-medium mb-1.5">Font Family</label>
-          <select value={fontFamily} onChange={(e) => setFontFamily(e.target.value as FontFamily)} className={inputClass}>
-            {FONT_FAMILIES.map((f) => <option key={f} value={f}>{f}</option>)}
-          </select>
-        </div>
-      </div>
 
-      {/* Sections */}
-      <div>
-        <div className="flex items-center justify-between mb-2">
-          <label className="text-sm font-medium">HTML Sections</label>
-          <span className="text-xs text-muted-foreground">Use Tailwind + DaisyUI classes. No &lt;html&gt;/&lt;body&gt; tags.</span>
-        </div>
-        <div className="space-y-2">
-          {sections.map((s, idx) => (
-            <div key={s.id} className="rounded-lg border border-border overflow-hidden">
-              <div
-                className="flex items-center gap-2 px-3 py-2.5 cursor-pointer hover:bg-muted/40 transition-colors"
-                onClick={() => toggleExpanded(s.id)}
-              >
-                {expanded.has(s.id) ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-                <span className="text-xs text-muted-foreground w-5 shrink-0">{idx + 1}.</span>
-                <input
-                  value={s.label}
-                  onChange={(e) => { e.stopPropagation(); updateSection(s.id, { label: e.target.value }); }}
-                  onClick={(e) => e.stopPropagation()}
-                  placeholder="Section label (e.g. Header)"
-                  className="flex-1 bg-transparent text-sm focus:outline-none"
-                />
-                <button
-                  type="button"
-                  onClick={(e) => { e.stopPropagation(); removeSection(s.id); }}
-                  className="text-muted-foreground hover:text-destructive transition-colors ml-auto"
-                  disabled={sections.length === 1}
-                >
-                  <Trash2 size={13} />
-                </button>
-              </div>
+        {genError && <p className="text-sm text-destructive">{genError}</p>}
 
-              {expanded.has(s.id) && (
-                <div className="border-t border-border p-3 space-y-2">
-                  <div>
-                    <label className="block text-xs text-muted-foreground mb-1">Section ID (kebab-case)</label>
-                    <input
-                      value={s.id}
-                      onChange={(e) => updateSection(s.id, { id: e.target.value })}
-                      className="w-full rounded-md border border-input bg-background px-2.5 py-1.5 text-xs font-mono focus:outline-none focus:ring-1 focus:ring-ring"
-                      placeholder="cv-header"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs text-muted-foreground mb-1">HTML</label>
-                    <textarea
-                      value={s.html}
-                      onChange={(e) => updateSection(s.id, { html: e.target.value })}
-                      rows={10}
-                      className="w-full rounded-md border border-input bg-background px-2.5 py-1.5 text-xs font-mono focus:outline-none focus:ring-1 focus:ring-ring resize-y"
-                      placeholder={'<div class="p-6 bg-base-100">\n  <h1 class="text-3xl font-bold">{{name}}</h1>\n</div>'}
-                      spellCheck={false}
-                    />
-                  </div>
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
         <button
           type="button"
-          onClick={addSection}
-          className="mt-2 inline-flex items-center gap-1 text-xs text-primary hover:underline"
+          onClick={generateFromAI}
+          disabled={isGenerating || !genDescription.trim()}
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 disabled:opacity-50"
         >
-          <Plus size={12} /> Add section
+          <Wand2 size={14} />
+          {isGenerating
+            ? (genBrandUrl ? 'Extracting brand & generating…' : 'Generating template…')
+            : (sections.length > 0 ? 'Regenerate template' : 'Generate template')}
         </button>
       </div>
 
-      {error && <p className="text-sm text-destructive">{error}</p>}
+      {/* Brand context */}
+      {extractedBrand && (
+        <div className="rounded-md bg-muted/40 border border-border p-3">
+          <p className="text-xs font-medium text-muted-foreground mb-1.5">Brand context extracted from URL:</p>
+          <pre className="text-xs whitespace-pre-wrap leading-relaxed">{extractedBrand}</pre>
+        </div>
+      )}
 
-      <button
-        onClick={save}
-        disabled={isPending}
-        className="px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
-      >
-        {isPending ? 'Saving…' : templateId ? 'Save changes' : 'Create template'}
-      </button>
+      {/* Generated sections summary */}
+      {sections.length > 0 && (
+        <div className="rounded-lg border border-border p-4 space-y-2">
+          <p className="text-sm font-medium flex items-center gap-2">
+            <CheckCircle size={15} className="text-success" />
+            {sections.length} sections generated
+          </p>
+          <ul className="space-y-1">
+            {sections.map((s, i) => (
+              <li key={s.id} className="flex items-center gap-2 text-sm text-muted-foreground">
+                <span className="text-xs w-4 text-right shrink-0">{i + 1}.</span>
+                <span>{s.label || s.id}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* Template metadata — only shown once sections exist */}
+      {sections.length > 0 && (
+        <>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-1.5">Name <span className="text-destructive">*</span></label>
+              <input value={name} onChange={(e) => setName(e.target.value)} className={inputClass} placeholder="Modern Minimal" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1.5">Category</label>
+              <input value={category} onChange={(e) => setCategory(e.target.value)} className={inputClass} placeholder="professional" />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-1.5">DaisyUI Theme</label>
+              <select value={daisyTheme} onChange={(e) => setDaisyTheme(e.target.value as DaisyTheme)} className={inputClass}>
+                {DAISY_THEMES.map((t) => <option key={t} value={t}>{t}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1.5">Font Family</label>
+              <select value={fontFamily} onChange={(e) => setFontFamily(e.target.value as FontFamily)} className={inputClass}>
+                {FONT_FAMILIES.map((f) => <option key={f} value={f}>{f}</option>)}
+              </select>
+            </div>
+          </div>
+
+          {error && <p className="text-sm text-destructive">{error}</p>}
+
+          <button
+            onClick={save}
+            disabled={isPending}
+            className="px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
+          >
+            {isPending ? 'Saving…' : templateId ? 'Save changes' : 'Create template'}
+          </button>
+        </>
+      )}
     </div>
   );
 }

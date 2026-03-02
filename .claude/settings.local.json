@@ -12,7 +12,8 @@
       "Bash(cat -n \"c:/git/cvcraft/app/\\(app\\)/templates/[id]/page.tsx\")",
       "Bash(npm uninstall @neondatabase/serverless)",
       "Bash(npm install postgres)",
-      "Bash(node -e \"require\\(''postgres''\\); console.log\\(''ok''\\)\")"
+      "Bash(node -e \"require\\(''postgres''\\); console.log\\(''ok''\\)\")",
+      "Bash(npx tsx scripts/seed-demo.ts)"
     ]
   }
 }
