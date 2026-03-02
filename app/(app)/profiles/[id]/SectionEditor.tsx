@@ -5,6 +5,7 @@ import { upsertProfileSection, deleteProfileSection } from '@/lib/actions/consul
 import { ChevronDown, ChevronRight, Plus, Trash2, Briefcase, GraduationCap, Wrench, Award, FolderOpen, Globe, BookOpen } from 'lucide-react';
 import type { ProfileSectionType, ProfileEntry } from '@/types';
 import type { ProfileSectionRow } from '@/lib/db/schema';
+import { Button } from '@/components/ui/button';
 
 const SECTION_ICON: Record<ProfileSectionType, React.ElementType> = {
   experience: Briefcase,
@@ -93,31 +94,24 @@ export function SectionEditor({ consultantId, section, type, label }: Props) {
           ))}
 
           <div className="flex items-center justify-between pt-1">
-            <button
-              type="button"
-              onClick={addEntry}
-              className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
-            >
+            <Button type="button" variant="link" size="sm" className="px-0 gap-1" onClick={addEntry}>
               <Plus size={12} /> Add entry
-            </button>
-            <div className="flex items-center gap-3">
+            </Button>
+            <div className="flex items-center gap-2">
               {section && (
-                <button
+                <Button
                   type="button"
+                  variant="ghost"
+                  size="xs"
+                  className="text-destructive hover:text-destructive"
                   onClick={deleteSection}
-                  className="text-xs text-destructive hover:underline flex items-center gap-0.5"
                 >
                   <Trash2 size={11} /> Delete section
-                </button>
+                </Button>
               )}
-              <button
-                type="button"
-                onClick={save}
-                disabled={isPending}
-                className="px-3 py-1.5 rounded-md bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
-              >
+              <Button type="button" size="xs" onClick={save} disabled={isPending}>
                 {isPending ? 'Saving…' : 'Save section'}
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -147,13 +141,15 @@ function EntryFields({
 
   return (
     <div className="rounded-md border border-border p-3 space-y-2.5 relative">
-      <button
+      <Button
         type="button"
+        variant="ghost"
+        size="icon-xs"
+        className="absolute top-2 right-2 hover:text-destructive"
         onClick={onRemove}
-        className="absolute top-2 right-2 text-muted-foreground hover:text-destructive transition-colors"
       >
         <Trash2 size={13} />
-      </button>
+      </Button>
 
       {type === 'skills' ? (
         <div>

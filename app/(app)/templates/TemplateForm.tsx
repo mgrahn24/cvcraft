@@ -5,6 +5,7 @@ import { Wand2, Link, CheckCircle } from 'lucide-react';
 import { DAISY_THEMES, FONT_FAMILIES } from '@/types';
 import type { Component, Theme, DaisyTheme, FontFamily } from '@/types';
 import { createTemplate, updateTemplate } from '@/lib/actions/templates';
+import { Button } from '@/components/ui/button';
 
 interface Section {
   id: string;
@@ -131,17 +132,16 @@ export function TemplateForm({
 
         {genError && <p className="text-sm text-destructive">{genError}</p>}
 
-        <button
+        <Button
           type="button"
           onClick={generateFromAI}
           disabled={isGenerating || !genDescription.trim()}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 disabled:opacity-50"
         >
           <Wand2 size={14} />
           {isGenerating
             ? (genBrandUrl ? 'Extracting brand & generating…' : 'Generating template…')
             : (sections.length > 0 ? 'Regenerate template' : 'Generate template')}
-        </button>
+        </Button>
       </div>
 
       {/* Brand context */}
@@ -201,13 +201,9 @@ export function TemplateForm({
 
           {error && <p className="text-sm text-destructive">{error}</p>}
 
-          <button
-            onClick={save}
-            disabled={isPending}
-            className="px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
-          >
+          <Button onClick={save} disabled={isPending}>
             {isPending ? 'Saving…' : templateId ? 'Save changes' : 'Create template'}
-          </button>
+          </Button>
         </>
       )}
     </div>

@@ -11,7 +11,13 @@
       "Bash(node -e \"console.log\\(require\\(''./node_modules/html2canvas/package.json''\\).version\\)\")",
       "Bash(node -e \"require\\(''html-to-image''\\)\")",
       "Bash(npm install html-to-image --save)",
-      "Bash(node -e \"const h = require\\(''html-to-image''\\); console.log\\(Object.keys\\(h\\)\\)\")"
+      "Bash(node -e \"const h = require\\(''html-to-image''\\); console.log\\(Object.keys\\(h\\)\\)\")",
+      "Bash(node -e \"const p = require\\(''./package.json''\\); console.log\\(JSON.stringify\\(p.dependencies, null, 2\\)\\)\")",
+      "Bash(node -e \"console.log\\(require\\(''./node_modules/ai/package.json''\\).version\\)\")",
+      "Bash(node -e \"const ai = require\\(''ai''\\); const keys = Object.keys\\(ai\\).filter\\(k => k.toLowerCase\\(\\).includes\\(''object''\\) || k.toLowerCase\\(\\).includes\\(''generate''\\)\\); console.log\\(keys\\)\")",
+      "WebFetch(domain:sdk.vercel.ai)",
+      "WebFetch(domain:ai-sdk.dev)",
+      "Bash(find \"c:\\\\git\\\\cvcraft/app/\\(app\\)\" -type f -name \"*.tsx\")"
     ]
   }
 }

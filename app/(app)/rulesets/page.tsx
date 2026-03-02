@@ -4,6 +4,7 @@ import { rulesets } from '@/lib/db/schema';
 import { createRuleset } from '@/lib/actions/rulesets';
 import { Shield } from 'lucide-react';
 import { RulesetCard } from './RulesetCard';
+import { Button } from '@/components/ui/button';
 
 export default async function RulesetsPage() {
   const rows = await db.select().from(rulesets);
@@ -50,9 +51,7 @@ export default async function RulesetsPage() {
             />
           </div>
           <div className="flex justify-end">
-            <button type="submit" className="px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors">
-              Create Ruleset
-            </button>
+            <Button type="submit">Create Ruleset</Button>
           </div>
         </form>
       </div>

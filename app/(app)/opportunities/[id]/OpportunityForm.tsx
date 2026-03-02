@@ -3,6 +3,7 @@
 import { useTransition } from 'react';
 import { updateOpportunity, deleteOpportunity } from '@/lib/actions/opportunities';
 import type { OpportunityRow } from '@/lib/db/schema';
+import { Button } from '@/components/ui/button';
 
 export function OpportunityForm({ opportunity }: { opportunity: OpportunityRow }) {
   const [isPending, startTransition] = useTransition();
@@ -32,12 +33,18 @@ export function OpportunityForm({ opportunity }: { opportunity: OpportunityRow }
         <input name="deadline" type="date" defaultValue={opportunity.deadline ?? ''} className="w-full rounded-md border border-input bg-background px-2.5 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-ring" />
       </div>
       <div className="flex items-center justify-between pt-1">
-        <button type="button" onClick={() => { if (confirm('Delete this opportunity?')) startTransition(() => deleteOpportunity(opportunity.id)); }} className="text-xs text-destructive hover:underline">
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="text-destructive hover:text-destructive"
+          onClick={() => { if (confirm('Delete this opportunity?')) startTransition(() => deleteOpportunity(opportunity.id)); }}
+        >
           Delete
-        </button>
-        <button type="submit" disabled={isPending} className="px-3 py-1.5 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 disabled:opacity-50">
+        </Button>
+        <Button type="submit" size="sm" disabled={isPending}>
           {isPending ? 'Saving…' : 'Save'}
-        </button>
+        </Button>
       </div>
     </form>
   );

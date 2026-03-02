@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loader2, ChevronRight } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface Props {
   opportunityId: string;
@@ -104,17 +105,17 @@ export function GenerateWizard({ opportunityId, consultants, templates, guidance
 
       {error && <p className="text-xs text-destructive">{error}</p>}
 
-      <button
+      <Button
         onClick={generate}
         disabled={loading || !consultantId || !templateId}
-        className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        className="w-full"
       >
         {loading ? (
           <><Loader2 size={14} className="animate-spin" /> Generating…</>
         ) : (
           <>Generate CV <ChevronRight size={14} /></>
         )}
-      </button>
+      </Button>
     </div>
   );
 }

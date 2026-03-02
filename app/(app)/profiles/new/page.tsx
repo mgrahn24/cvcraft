@@ -1,5 +1,6 @@
 import { createConsultant } from '@/lib/actions/consultants';
 import { ImportCVForm } from './ImportCVForm';
+import { Button } from '@/components/ui/button';
 
 export default function NewProfilePage() {
   return (
@@ -53,9 +54,7 @@ export default function NewProfilePage() {
             <textarea name="summary" rows={3} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring resize-none" placeholder="Brief professional summary..." />
           </div>
           <div className="flex justify-end">
-            <button type="submit" className="px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors">
-              Create Profile
-            </button>
+            <Button type="submit">Create Profile</Button>
           </div>
         </form>
       </section>

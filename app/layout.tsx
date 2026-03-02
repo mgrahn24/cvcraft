@@ -23,15 +23,38 @@ export default function RootLayout({
           rel="stylesheet"
         />
 
-        {/* DaisyUI — component styles + data-theme color variables (for canvas) */}
-        <link
-          href="https://cdn.jsdelivr.net/npm/daisyui@4/dist/full.min.css"
-          rel="stylesheet"
-          type="text/css"
-        />
       </head>
       <body>
         {children}
+
+        {/* Tailwind Play CDN — config must run before the CDN script reads window.tailwind.
+            Scoped to #cv-canvas-root so it never touches app UI. Preflight disabled
+            because the app has its own Tailwind v4 base reset. */}
+        <Script
+          id="tailwind-cdn-config"
+          strategy="afterInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `window.tailwind={config:{important:'#cv-canvas-root',corePlugins:{preflight:false},theme:{extend:{colors:{
+              'base-100':'oklch(var(--b1) / <alpha-value>)',
+              'base-200':'oklch(var(--b2) / <alpha-value>)',
+              'base-300':'oklch(var(--b3) / <alpha-value>)',
+              'base-content':'oklch(var(--bc) / <alpha-value>)',
+              'primary':'oklch(var(--p) / <alpha-value>)',
+              'primary-content':'oklch(var(--pc) / <alpha-value>)',
+              'secondary':'oklch(var(--s) / <alpha-value>)',
+              'secondary-content':'oklch(var(--sc) / <alpha-value>)',
+              'accent':'oklch(var(--a) / <alpha-value>)',
+              'accent-content':'oklch(var(--ac) / <alpha-value>)',
+              'neutral':'oklch(var(--n) / <alpha-value>)',
+              'neutral-content':'oklch(var(--nc) / <alpha-value>)',
+            }}}}}`,
+          }}
+        />
+        <Script
+          id="tailwind-cdn"
+          src="https://cdn.tailwindcss.com"
+          strategy="afterInteractive"
+        />
 
         {/* Lucide icons — replaces <i data-lucide=""> with SVGs */}
         <Script

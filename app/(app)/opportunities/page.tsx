@@ -4,6 +4,7 @@ import { db } from '@/lib/db';
 import { opportunities } from '@/lib/db/schema';
 import { desc } from 'drizzle-orm';
 import { Briefcase, Plus } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 export default async function OpportunitiesPage() {
   const rows = await db.select().from(opportunities).orderBy(desc(opportunities.createdAt));
@@ -15,18 +16,22 @@ export default async function OpportunitiesPage() {
           <h1 className="text-2xl font-semibold">Opportunities</h1>
           <p className="text-muted-foreground text-sm mt-0.5">Generate CVs tailored to specific roles</p>
         </div>
-        <Link href="/opportunities/new" className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors">
-          <Plus size={15} /> New
-        </Link>
+        <Button asChild size="sm">
+          <Link href="/opportunities/new">
+            <Plus size={15} /> New
+          </Link>
+        </Button>
       </div>
 
       {rows.length === 0 ? (
         <div className="rounded-lg border border-dashed border-border p-12 text-center">
           <Briefcase className="mx-auto mb-3 text-muted-foreground" size={32} />
           <p className="text-sm text-muted-foreground mb-4">No opportunities yet.</p>
-          <Link href="/opportunities/new" className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors">
-            <Plus size={15} /> Create first opportunity
-          </Link>
+          <Button asChild size="sm">
+            <Link href="/opportunities/new">
+              <Plus size={15} /> Create first opportunity
+            </Link>
+          </Button>
         </div>
       ) : (
         <ul className="space-y-2">

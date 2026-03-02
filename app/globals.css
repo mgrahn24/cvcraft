@@ -125,6 +125,14 @@
   }
 }
 
+/* DaisyUI CDN (unlayered) removes :focus outlines globally. Override outside
+   any @layer so this has higher priority than DaisyUI's unlayered reset. */
+*:focus-visible {
+  outline: 2px solid;
+  outline-color: color-mix(in oklab, var(--ring, oklch(0.708 0 0)) 50%, transparent);
+  outline-offset: 2px;
+}
+
 @keyframes blitz-shimmer {
   0%   { transform: translateX(-100%); }
   100% { transform: translateX(200%); }

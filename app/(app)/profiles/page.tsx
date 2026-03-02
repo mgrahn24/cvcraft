@@ -4,6 +4,7 @@ import { db } from '@/lib/db';
 import { consultants } from '@/lib/db/schema';
 import { desc } from 'drizzle-orm';
 import { Plus, User } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 export default async function ProfilesPage() {
   const rows = await db.select().from(consultants).orderBy(desc(consultants.createdAt));
@@ -15,24 +16,22 @@ export default async function ProfilesPage() {
           <h1 className="text-2xl font-semibold">Profiles</h1>
           <p className="text-muted-foreground text-sm mt-0.5">Consultant profiles used to generate CVs</p>
         </div>
-        <Link
-          href="/profiles/new"
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
-        >
-          <Plus size={15} /> New Profile
-        </Link>
+        <Button asChild size="sm">
+          <Link href="/profiles/new">
+            <Plus size={15} /> New Profile
+          </Link>
+        </Button>
       </div>
 
       {rows.length === 0 ? (
         <div className="rounded-lg border border-dashed border-border p-12 text-center">
           <User className="mx-auto mb-3 text-muted-foreground" size={32} />
           <p className="text-sm text-muted-foreground mb-4">No profiles yet. Import a CV or create one manually.</p>
-          <Link
-            href="/profiles/new"
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
-          >
-            <Plus size={15} /> Add Profile
-          </Link>
+          <Button asChild size="sm">
+            <Link href="/profiles/new">
+              <Plus size={15} /> Add Profile
+            </Link>
+          </Button>
         </div>
       ) : (
         <ul className="space-y-2">

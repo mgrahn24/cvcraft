@@ -1,4 +1,5 @@
 import { createOpportunity } from '@/lib/actions/opportunities';
+import { Button } from '@/components/ui/button';
 
 export default function NewOpportunityPage() {
   return (
@@ -30,9 +31,7 @@ export default function NewOpportunityPage() {
           <input name="deadline" type="date" className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring" />
         </div>
         <div className="flex justify-end">
-          <button type="submit" className="px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors">
-            Create Opportunity
-          </button>
+          <Button type="submit">Create Opportunity</Button>
         </div>
       </form>
     </div>

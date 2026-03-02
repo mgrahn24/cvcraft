@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loader2, Sparkles } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface Props {
   consultants: { id: string; name: string }[];
@@ -125,17 +126,17 @@ export function GenerateForm({ consultants, opportunities, templates, defaultOpp
 
       {error && <p className="text-sm text-destructive">{error}</p>}
 
-      <button
+      <Button
         onClick={generate}
         disabled={loading || !canGenerate}
-        className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        className="w-full"
       >
         {loading ? (
           <><Loader2 size={15} className="animate-spin" /> Generating CV…</>
         ) : (
           <><Sparkles size={15} /> Generate CV</>
         )}
-      </button>
+      </Button>
 
       {loading && (
         <p className="text-xs text-center text-muted-foreground">

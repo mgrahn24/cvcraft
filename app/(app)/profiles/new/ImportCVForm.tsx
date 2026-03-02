@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 export function ImportCVForm() {
   const router = useRouter();
@@ -41,14 +42,10 @@ export function ImportCVForm() {
       />
       {error && <p className="text-xs text-destructive">{error}</p>}
       <div className="flex justify-end">
-        <button
-          type="submit"
-          disabled={loading || !cvText.trim()}
-          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-        >
+        <Button type="submit" disabled={loading || !cvText.trim()}>
           {loading && <Loader2 size={14} className="animate-spin" />}
           {loading ? 'Extracting...' : 'Import CV'}
-        </button>
+        </Button>
       </div>
     </form>
   );

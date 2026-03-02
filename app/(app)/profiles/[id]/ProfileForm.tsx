@@ -4,6 +4,7 @@ import { useState, useTransition, useRef } from 'react';
 import { updateConsultant, deleteConsultant } from '@/lib/actions/consultants';
 import type { ConsultantRow } from '@/lib/db/schema';
 import { User, Upload, X } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 export function ProfileForm({ consultant }: { consultant: ConsultantRow }) {
   const [isPending, startTransition] = useTransition();
@@ -67,13 +68,15 @@ export function ProfileForm({ consultant }: { consultant: ConsultantRow }) {
           <p className="text-xs font-medium">Profile photo</p>
           <p className="text-xs text-muted-foreground mt-0.5">Used as headshot in generated CVs</p>
           {photoUrl && (
-            <button
+            <Button
               type="button"
+              variant="link"
+              size="xs"
+              className="mt-1 text-destructive hover:text-destructive px-0"
               onClick={() => setPhotoUrl('')}
-              className="mt-1 inline-flex items-center gap-1 text-xs text-destructive hover:underline"
             >
               <X size={11} /> Remove photo
-            </button>
+            </Button>
           )}
         </div>
         <input type="hidden" name="photoUrl" value={photoUrl} />
@@ -108,24 +111,22 @@ export function ProfileForm({ consultant }: { consultant: ConsultantRow }) {
         <textarea name="summary" rows={3} defaultValue={consultant.summary ?? ''} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring resize-none" />
       </div>
       <div className="flex items-center justify-between pt-1">
-        <button
+        <Button
           type="button"
+          variant="ghost"
+          size="sm"
+          className="text-destructive hover:text-destructive"
           onClick={() => {
             if (confirm(`Delete ${consultant.name}? This cannot be undone.`)) {
               startTransition(() => deleteConsultant(consultant.id));
             }
           }}
-          className="text-xs text-destructive hover:underline"
         >
           Delete profile
-        </button>
-        <button
-          type="submit"
-          disabled={isPending}
-          className="px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
-        >
+        </Button>
+        <Button type="submit" size="sm" disabled={isPending}>
           {isPending ? 'Saving…' : 'Save changes'}
-        </button>
+        </Button>
       </div>
     </form>
   );

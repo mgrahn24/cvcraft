@@ -103,10 +103,28 @@ function findEditableEl(target: HTMLElement, wrapper: HTMLElement): HTMLElement 
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
+const DAISYUI_CSS_URL = 'https://cdn.jsdelivr.net/npm/daisyui@4/dist/full.min.css';
+const DAISYUI_LINK_ID = 'daisyui-canvas-css';
+
 export function Canvas() {
   const canvasRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const lastPageSignatureRef = useRef<string | null>(null);
+
+  // Load DaisyUI CSS only while the canvas is mounted (CV editor page).
+  // Keeps all other app pages free of DaisyUI's global style resets.
+  useEffect(() => {
+    if (!document.getElementById(DAISYUI_LINK_ID)) {
+      const link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = DAISYUI_CSS_URL;
+      link.id = DAISYUI_LINK_ID;
+      document.head.appendChild(link);
+    }
+    return () => {
+      document.getElementById(DAISYUI_LINK_ID)?.remove();
+    };
+  }, []);
 
   // Inline text-editing state (ref: no re-render needed while typing)
   const editingRef = useRef<InlineEdit | null>(null);
@@ -896,6 +914,7 @@ export function Canvas() {
     >
       <div
         ref={canvasRef}
+        id="cv-canvas-root"
         data-theme={page?.theme.daisyTheme ?? 'light'}
         className="min-h-full"
         style={{

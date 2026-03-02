@@ -7,6 +7,7 @@ import { desc } from 'drizzle-orm';
 import { Plus } from 'lucide-react';
 import type { Component, Theme } from '@/types';
 import { DeleteTemplateButton } from './[id]/DeleteTemplateButton';
+import { Button } from '@/components/ui/button';
 
 export default async function TemplatesPage() {
   await seedBuiltInTemplates();
@@ -19,12 +20,11 @@ export default async function TemplatesPage() {
           <h1 className="text-2xl font-semibold">CV Templates</h1>
           <p className="text-muted-foreground text-sm mt-0.5">Choose a layout for generated CVs</p>
         </div>
-        <Link
-          href="/templates/new"
-          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
-        >
-          <Plus size={14} /> New Template
-        </Link>
+        <Button asChild size="sm">
+          <Link href="/templates/new">
+            <Plus size={14} /> New Template
+          </Link>
+        </Button>
       </div>
 
       <div className="grid grid-cols-3 gap-5">

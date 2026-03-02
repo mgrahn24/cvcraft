@@ -1,13 +1,13 @@
-import { generateObject } from 'ai';
+import { generateText, Output } from 'ai';
 import { models } from '@/lib/ai/models';
 import { cvGenerationSchema } from '@/lib/ai/schemas';
 import { CV_GENERATION_SYSTEM_PROMPT, CV_GENERATION_USER_PROMPT } from '@/lib/ai/prompts';
 import { db } from '@/lib/db';
 import { consultants, profileSections, opportunities, cvTemplates, rulesets, cvVersions, consultantGuidance } from '@/lib/db/schema';
 import { eq, and, inArray } from 'drizzle-orm';
-import type { Component, Theme, ProfileSection } from '@/types';
+import type { Component, Theme } from '@/types';
 
-export const maxDuration = 120;
+export const maxDuration = 60;
 
 export async function POST(req: Request) {
   try {
@@ -62,9 +62,9 @@ export async function POST(req: Request) {
 
     const guidance = body.consultantGuidance || guidanceRows[0]?.guidance;
 
-    const { object } = await generateObject({
+    const { output } = await generateText({
       model: models.generate,
-      schema: cvGenerationSchema,
+      output: Output.object({ schema: cvGenerationSchema }),
       system: CV_GENERATION_SYSTEM_PROMPT,
       prompt: CV_GENERATION_USER_PROMPT({
         consultant: {
@@ -98,7 +98,7 @@ export async function POST(req: Request) {
     });
 
     // Build canvas-compatible components
-    const components: Component[] = object.components.map((c, i) => ({
+    const components: Component[] = output.components.map((c, i) => ({
       id: c.id,
       type: 'custom' as const,
       label: c.label,
