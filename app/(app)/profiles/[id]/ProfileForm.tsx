@@ -35,7 +35,6 @@ export function ProfileForm({ consultant }: { consultant: ConsultantRow }) {
       action={(fd) => startTransition(() => updateConsultant(consultant.id, fd))}
       className="space-y-4"
     >
-      {/* Photo upload */}
       <div className="flex items-center gap-4">
         <div className="relative group">
           <div
@@ -113,9 +112,8 @@ export function ProfileForm({ consultant }: { consultant: ConsultantRow }) {
       <div className="flex items-center justify-between pt-1">
         <Button
           type="button"
-          variant="ghost"
+          variant="destructive"
           size="sm"
-          className="text-destructive hover:text-destructive"
           onClick={() => {
             if (confirm(`Delete ${consultant.name}? This cannot be undone.`)) {
               startTransition(() => deleteConsultant(consultant.id));

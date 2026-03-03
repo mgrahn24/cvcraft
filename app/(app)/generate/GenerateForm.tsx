@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { Loader2, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -55,13 +56,19 @@ export function GenerateForm({ consultants, opportunities, templates, defaultOpp
         {consultants.length === 0 && (
           <p className="text-sm text-muted-foreground">
             No profiles yet.{' '}
-            <a href="/profiles/new" className="text-primary hover:underline">Add a consultant profile</a> first.
+            <Button asChild variant="link" size="sm" className="h-auto px-0 py-0 align-baseline">
+              <Link href="/profiles/new">Add a consultant profile</Link>
+            </Button>{' '}
+            first.
           </p>
         )}
         {opportunities.length === 0 && (
           <p className="text-sm text-muted-foreground">
             No opportunities yet.{' '}
-            <a href="/opportunities/new" className="text-primary hover:underline">Create an opportunity</a> first.
+            <Button asChild variant="link" size="sm" className="h-auto px-0 py-0 align-baseline">
+              <Link href="/opportunities/new">Create an opportunity</Link>
+            </Button>{' '}
+            first.
           </p>
         )}
       </div>

@@ -3,6 +3,7 @@
 import { useTransition } from 'react';
 import { Trash2 } from 'lucide-react';
 import { deleteTemplate } from '@/lib/actions/templates';
+import { Button } from '@/components/ui/button';
 
 export function DeleteTemplateButton({ id, isBuiltIn, compact }: { id: string; isBuiltIn: boolean; compact?: boolean }) {
   const [isPending, startTransition] = useTransition();
@@ -20,24 +21,28 @@ export function DeleteTemplateButton({ id, isBuiltIn, compact }: { id: string; i
 
   if (compact) {
     return (
-      <button
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon-xs"
         onClick={handleDelete}
         disabled={isPending}
-        className="text-muted-foreground hover:text-destructive transition-colors disabled:opacity-50"
+        className="text-muted-foreground hover:text-destructive"
         title="Delete template"
       >
         <Trash2 size={13} />
-      </button>
+      </Button>
     );
   }
 
   return (
-    <button
+    <Button
+      type="button"
+      variant="destructive"
       onClick={handleDelete}
       disabled={isPending}
-      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-destructive/40 text-destructive text-sm hover:bg-destructive/10 transition-colors disabled:opacity-50"
     >
-      <Trash2 size={13} /> {isPending ? 'Deleting…' : 'Delete'}
-    </button>
+      <Trash2 size={13} /> {isPending ? 'Deleting...' : 'Delete'}
+    </Button>
   );
 }

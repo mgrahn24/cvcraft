@@ -35,9 +35,8 @@ export function OpportunityForm({ opportunity }: { opportunity: OpportunityRow }
       <div className="flex items-center justify-between pt-1">
         <Button
           type="button"
-          variant="ghost"
+          variant="destructive"
           size="sm"
-          className="text-destructive hover:text-destructive"
           onClick={() => { if (confirm('Delete this opportunity?')) startTransition(() => deleteOpportunity(opportunity.id)); }}
         >
           Delete

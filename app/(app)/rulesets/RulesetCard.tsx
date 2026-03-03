@@ -25,7 +25,7 @@ export function RulesetCard({ ruleset }: Props) {
             <Button
               variant="ghost"
               size="icon-xs"
-              className="hover:text-destructive"
+              className="text-destructive hover:bg-destructive/10 hover:text-destructive"
               onClick={() => {
                 if (confirm(`Delete "${ruleset.name}"?`)) {
                   startTransition(() => deleteRuleset(ruleset.id));
@@ -58,7 +58,7 @@ export function RulesetCard({ ruleset }: Props) {
       <input name="name" defaultValue={ruleset.name} className="w-full rounded-md border border-input bg-background px-2.5 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-ring" />
       <textarea name="rules" rows={4} defaultValue={ruleset.rules.join('\n')} className="w-full rounded-md border border-input bg-background px-2.5 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-ring resize-none font-mono" />
       <div className="flex justify-end gap-2">
-        <Button type="button" variant="ghost" size="sm" onClick={() => setEditing(false)}>
+        <Button type="button" variant="secondary" size="sm" onClick={() => setEditing(false)}>
           <X size={12} /> Cancel
         </Button>
         <Button type="submit" size="sm" disabled={isPending}>

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { Loader2, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -55,7 +56,10 @@ export function GenerateWizard({ opportunityId, consultants, templates, guidance
     return (
       <p className="text-sm text-muted-foreground">
         No profiles yet.{' '}
-        <a href="/profiles/new" className="text-primary hover:underline">Add a profile</a> first.
+        <Button asChild variant="link" size="sm" className="h-auto px-0 py-0 align-baseline">
+          <Link href="/profiles/new">Add a profile</Link>
+        </Button>{' '}
+        first.
       </p>
     );
   }
