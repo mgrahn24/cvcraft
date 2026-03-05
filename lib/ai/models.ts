@@ -15,4 +15,6 @@ export const models = {
   add:      model(process.env.GROQ_MODEL_ADD),
   suggest:  model(process.env.GROQ_MODEL_SUGGEST),
   agent:    model(process.env.GROQ_MODEL_AGENT),
+  profileExtract: model(process.env.GROQ_MODEL_PROFILE_EXTRACT ?? process.env.GROQ_MODEL_GENERATE),
+  profileBuilderTurn: model(process.env.GROQ_MODEL_PROFILE_BUILDER_TURN ?? process.env.GROQ_MODEL_AGENT),
 };

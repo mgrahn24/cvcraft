@@ -285,6 +285,10 @@ Opportunities should be managed as a standalone entity, not just a text input at
 cd c:/git/cvcraft
 npm install
 # Add your API key to .env.local
+# Optional: use a dedicated model for profile-builder chat turns
+# GROQ_MODEL_PROFILE_BUILDER_TURN=moonshotai/kimi-k2-instruct
+# Optional: use a dedicated model for CV/profile extraction endpoints
+# GROQ_MODEL_PROFILE_EXTRACT=moonshotai/kimi-k2-instruct
 npm run dev
 ```
 

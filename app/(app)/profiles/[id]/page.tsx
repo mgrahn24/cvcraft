@@ -5,6 +5,7 @@ import { db } from '@/lib/db';
 import { consultants, profileSections } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { ArrowLeft } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { ProfileForm } from './ProfileForm';
 import { SectionEditor } from './SectionEditor';
 import type { ProfileSectionType } from '@/types';
@@ -37,6 +38,11 @@ export default async function ProfileDetailPage({ params }: { params: Promise<{ 
       </Link>
 
       <h1 className="text-2xl font-semibold mb-6">{consultant.name}</h1>
+      <div className="mb-6">
+        <Button asChild size="sm" variant="outline">
+          <Link href={`/profiles/${id}/improve`}>Improve in Builder</Link>
+        </Button>
+      </div>
 
       {/* Basic info form */}
       <section className="mb-8">

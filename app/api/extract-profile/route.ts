@@ -13,7 +13,7 @@ export async function POST(req: Request) {
     }
 
     const { object } = await generateObject({
-      model: models.generate,
+      model: models.profileExtract,
       schema: profileExtractionSchema,
       system: `You are an expert CV parser. Extract structured profile information from the provided CV text.
 - Extract ALL experience, education, skills, certifications, projects, languages, and publications you find.
