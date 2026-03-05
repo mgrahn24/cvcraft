@@ -365,9 +365,33 @@ export function calculateCompleteness(
     profileState.basics.summary.trim().length >= 200;
   if (!advancedReady) overall = Math.min(overall, 96);
   if (advancedReady && overall < 98) overall = 98;
-  const nextFocus = (Object.entries(components) as Array<[keyof ComponentScores, number]>)
+  const focusCandidates = (Object.entries(components) as Array<[keyof ComponentScores, number]>)
     .filter(([key]) => key !== 'profileTarget')
-    .sort((a, b) => a[1] - b[1])[0][0];
+    .filter(([key]) => {
+      if (key === 'publications') {
+        return targetState.prioritySections.includes('publications');
+      }
+      if (key === 'languages') {
+        return (
+          targetState.minLanguageEntries > 0 ||
+          targetState.prioritySections.includes('languages') ||
+          profileState.languages.length > 0
+        );
+      }
+      if (key === 'certifications') {
+        return (
+          targetState.minCertificationEntries > 0 ||
+          targetState.prioritySections.includes('certifications') ||
+          profileState.certifications.length > 0
+        );
+      }
+      return true;
+    });
+  const ranked = (focusCandidates.length > 0
+    ? focusCandidates
+    : (Object.entries(components) as Array<[keyof ComponentScores, number]>).filter(([key]) => key !== 'profileTarget'))
+    .sort((a, b) => a[1] - b[1]);
+  const nextFocus = ranked[0][0];
 
   return { overall, components, nextFocus };
 }

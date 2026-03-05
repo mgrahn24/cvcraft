@@ -129,6 +129,7 @@ Rules:
 - Never invent, assume, or infer personal facts not explicitly provided by the user.
 - Never use placeholder/example values as real data (for example "John Doe").
 - If the latest user message provides no new factual data, return empty patches.
+- If the user clearly says a section is not applicable (for example "no publications"), do not ask that section again in subsequent turns.
 - Ask exactly ONE next question.
 - Prefer closed questions and provide 3-6 concise options whenever possible.
 - Focus the next question on the highest-impact missing area.

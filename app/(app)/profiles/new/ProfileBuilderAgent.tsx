@@ -41,7 +41,6 @@ export function ProfileBuilderAgent({ consultantId }: { consultantId?: string })
   const router = useRouter();
   const [builderStarted, setBuilderStarted] = useState(!!consultantId);
   const [startMode, setStartMode] = useState<'choose'|'import'>('choose');
-  const [importMethod, setImportMethod] = useState<'text'|'file'>('text');
   const [importFile, setImportFile] = useState<File | null>(null);
   const [importError, setImportError] = useState('');
   const [hasInitialized, setHasInitialized] = useState(false);
@@ -66,6 +65,7 @@ export function ProfileBuilderAgent({ consultantId }: { consultantId?: string })
   const [highlightSection, setHighlightSection] = useState<SectionId | null>(null);
   const [highlightPath, setHighlightPath] = useState<string | null>(null);
   const chatRef = useRef<HTMLDivElement | null>(null);
+  const importFileInputRef = useRef<HTMLInputElement | null>(null);
   const refs = useRef<Partial<Record<SectionId, HTMLDivElement | null>>>({});
   const profilePaneRef = useRef<HTMLDivElement | null>(null);
   const fetchTurnRef = useRef<((nextMessages: ProfileBuilderMessage[], nextProfile: ProfileBuilderState, nextTarget: ProfileBuilderTargetState) => Promise<void>) | null>(null);
@@ -274,11 +274,13 @@ export function ProfileBuilderAgent({ consultantId }: { consultantId?: string })
       setIsSeeding(false);
     }
   };
-  const importFromSelectedFile = async () => {
-    if (!importFile) return;
+  const importFromSelectedFile = async (pickedFile?: File | null) => {
+    const file = pickedFile ?? importFile;
+    if (!file) return;
+    setImportFile(file);
     try {
       const form = new FormData();
-      form.append('file', importFile);
+      form.append('file', file);
       const res = await fetch('/api/extract-text-file', {
         method: 'POST',
         body: form,
@@ -331,32 +333,38 @@ export function ProfileBuilderAgent({ consultantId }: { consultantId?: string })
           )}
           {startMode === 'import' && (
             <div className="space-y-3">
-              <div className="flex gap-2">
-                <Button type="button" size="xs" variant={importMethod === 'text' ? 'default' : 'outline'} onClick={() => setImportMethod('text')}>Paste text</Button>
-                <Button type="button" size="xs" variant={importMethod === 'file' ? 'default' : 'outline'} onClick={() => setImportMethod('file')}>Upload file</Button>
+              <div className="rounded-md border border-border/70 p-3 space-y-2 bg-muted/20">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-xs text-muted-foreground">Upload CV file for fastest start (imports automatically).</p>
+                  <Button type="button" size="xs" onClick={() => importFileInputRef.current?.click()} disabled={isSeeding}>
+                    {isSeeding ? 'Importing...' : 'Upload CV file'}
+                  </Button>
+                </div>
+                <input
+                  ref={importFileInputRef}
+                  type="file"
+                  accept=".txt,.md,.rtf,.csv,.log,.text,.pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0] ?? null;
+                    setImportFile(file);
+                    if (file) void importFromSelectedFile(file);
+                  }}
+                  className="hidden"
+                />
+                <p className="text-[11px] text-muted-foreground">
+                  Supports TXT, PDF and DOCX.{importFile ? ` Selected: ${importFile.name}` : ''}
+                </p>
               </div>
-              {importMethod === 'text' ? (
-                <div className="space-y-2">
-                  <textarea value={seedCvText} onChange={(e) => setSeedCvText(e.target.value)} rows={8} className={`${INPUT} resize-none`} placeholder="Paste CV text" />
-                  <div className="flex justify-between">
-                    <Button type="button" size="xs" variant="ghost" onClick={() => setStartMode('choose')}>Back</Button>
-                    <Button type="button" size="xs" onClick={() => streamImportFromCv(seedCvText)} disabled={isSeeding || !seedCvText.trim()}>
-                      {isSeeding ? 'Importing...' : 'Start import'}
-                    </Button>
-                  </div>
+              <div className="space-y-2">
+                <p className="text-xs text-muted-foreground">Or paste CV text:</p>
+                <textarea value={seedCvText} onChange={(e) => setSeedCvText(e.target.value)} rows={8} className={`${INPUT} resize-none`} placeholder="Paste CV text" />
+                <div className="flex justify-between">
+                  <Button type="button" size="xs" variant="ghost" onClick={() => setStartMode('choose')}>Back</Button>
+                  <Button type="button" size="xs" onClick={() => streamImportFromCv(seedCvText)} disabled={isSeeding || !seedCvText.trim()}>
+                    {isSeeding ? 'Importing...' : 'Start import from text'}
+                  </Button>
                 </div>
-              ) : (
-                <div className="space-y-2">
-                  <input type="file" accept=".txt,.md,.rtf,.csv,.log,.text,.pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" onChange={(e) => setImportFile(e.target.files?.[0] ?? null)} className={INPUT} />
-                  <p className="text-[11px] text-muted-foreground">Supports TXT, PDF and DOCX.</p>
-                  <div className="flex justify-between">
-                    <Button type="button" size="xs" variant="ghost" onClick={() => setStartMode('choose')}>Back</Button>
-                    <Button type="button" size="xs" onClick={importFromSelectedFile} disabled={isSeeding || !importFile}>
-                      {isSeeding ? 'Importing...' : 'Start import'}
-                    </Button>
-                  </div>
-                </div>
-              )}
+              </div>
               {importError && <p className="text-xs text-destructive">{importError}</p>}
             </div>
           )}
@@ -367,7 +375,7 @@ export function ProfileBuilderAgent({ consultantId }: { consultantId?: string })
 
   return <div className="grid grid-cols-1 xl:grid-cols-[0.95fr_1.35fr] 2xl:grid-cols-[1.05fr_1.55fr] gap-4 xl:gap-5 h-[calc(100vh-140px)] min-h-[620px]">
     <section className="rounded-lg border border-border bg-card p-3 md:p-4 space-y-3 h-full min-h-0 flex flex-col overflow-hidden">
-      <div className="flex items-center justify-between"><h3 className="text-sm font-semibold">Agent Chat</h3><span className="text-xs text-muted-foreground">Next focus: {label(nextFocus || 'basics')}</span></div>
+      <div className="flex items-center justify-between gap-2"><h3 className="text-sm font-semibold">Agent Chat</h3><div className="flex items-center gap-2"><span className="text-xs text-muted-foreground">Next focus: {label(nextFocus || 'basics')}</span><Button type="button" size="xs" onClick={save} disabled={isSaving || !profileState.basics.name.trim()}>{isSaving ? 'Saving...' : consultantId ? 'Save Improvements' : 'Create Profile'}</Button></div></div>
       {showSeedInput ? <div className="rounded-md border border-border/80 p-2.5 bg-muted/20"><p className="text-xs font-medium mb-1">Seed profile from CV text</p><textarea value={seedCvText} onChange={(e)=>setSeedCvText(e.target.value)} rows={4} placeholder="Paste CV text" className={`${INPUT} resize-none`} /><div className="flex justify-between mt-2"><Button type="button" size="xs" variant="ghost" onClick={()=>setShowSeedInput(false)}>Hide</Button><Button type="button" size="xs" variant="outline" onClick={seedFromCv} disabled={isSeeding || !seedCvText.trim()}>{isSeeding?'Seeding...':'Seed From CV'}</Button></div></div> : <div className="rounded-md border border-border/80 p-2.5 bg-muted/20 flex items-center justify-between"><p className="text-xs text-muted-foreground">CV input hidden to maximize chat space.</p><Button type="button" size="xs" variant="outline" onClick={()=>setShowSeedInput(true)}>Show input</Button></div>}
       <div ref={chatRef} className="flex-1 min-h-0 overflow-y-auto rounded-md border border-border/70 bg-background p-3 space-y-2">{messages.map((m,i)=><div key={i} className={m.role==='assistant'?'text-sm':'text-sm text-right'}><span className={m.role==='assistant'?'inline-block rounded-md bg-muted px-2.5 py-1.5':'inline-block rounded-md bg-primary text-primary-foreground px-2.5 py-1.5'}>{m.content}</span></div>)}{isLoadingTurn && <div className="text-xs text-muted-foreground inline-flex items-center gap-1"><Loader2 size={12} className="animate-spin" /> Thinking...</div>}</div>
       {turn && <div className="space-y-2">{turn.inputType==='single' && <div className="flex flex-wrap gap-2">{turn.options.map(o=><Button key={o} type="button" variant="outline" size="xs" onClick={()=>submit(o)} disabled={isLoadingTurn}>{o}</Button>)}</div>}{turn.inputType==='multi' && <div className="space-y-2"><div className="flex flex-wrap gap-2">{turn.options.map(o=><Button key={o} type="button" size="xs" variant={multiSelection.includes(o)?'default':'outline'} onClick={()=>setMultiSelection(p=>p.includes(o)?p.filter(x=>x!==o):[...p,o])}>{o}</Button>)}</div><Button type="button" size="xs" onClick={()=>submit(multiSelection.join(', '))} disabled={isLoadingTurn || !multiSelection.length}>Send selection</Button></div>}<form onSubmit={(e)=>{e.preventDefault(); if (textInput.trim()) submit(textInput.trim());}} className="flex gap-2"><input value={textInput} onChange={(e)=>setTextInput(e.target.value)} placeholder={turn.placeholder || 'Type your answer'} className="flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring" /><Button type="submit" disabled={isLoadingTurn || !textInput.trim()}>Send</Button></form></div>}
@@ -375,7 +383,7 @@ export function ProfileBuilderAgent({ consultantId }: { consultantId?: string })
       {error && <p className="text-xs text-destructive">{error}</p>}
     </section>
     <section ref={profilePaneRef} className="rounded-lg border border-border bg-card h-full min-h-0 overflow-y-auto relative">
-      <div className="sticky top-0 z-40 bg-card px-4 pt-4 pb-2 border-b border-border/70 shadow-sm space-y-2"><div className="flex items-center justify-between"><h3 className="text-sm font-semibold">Profile Completeness</h3><span className="text-xs font-medium">{completeness.overall}%</span></div><div className="h-2 rounded-full bg-muted overflow-hidden"><div className={`h-full transition-all ${pcolor(completeness.overall)}`} style={{ width: `${completeness.overall}%` }} /></div><div className="grid grid-cols-2 xl:grid-cols-4 gap-2">{Object.entries(completeness.components).filter(([k])=>k!=='profileTarget').map(([k,v])=><div key={k} className="rounded border border-border/70 p-1.5"><div className="flex items-center justify-between text-[11px] mb-1"><span>{label(k)}</span><span>{v}%</span></div><div className="h-1.5 rounded-full bg-muted overflow-hidden"><div className={`h-full transition-all ${pcolor(v)}`} style={{ width: `${v}%` }} /></div></div>)}</div><div className="flex flex-wrap gap-1.5 pt-1">{(['basics','target','experience','education','skills','projects','certifications','languages','publications'] as SectionId[]).map(s=><Button key={s} type="button" size="xs" variant="outline" onClick={()=>jump(s)}>{label(s)}</Button>)}</div></div>
+      <div className="sticky top-0 z-40 bg-card px-4 pt-4 pb-2 border-b border-border/70 shadow-sm space-y-2"><div className="flex items-center justify-between gap-2"><h3 className="text-sm font-semibold">Profile Completeness</h3><div className="flex items-center gap-2"><span className="text-xs font-medium">{completeness.overall}%</span><Button type="button" size="xs" onClick={save} disabled={isSaving || !profileState.basics.name.trim()}>{isSaving ? 'Saving...' : consultantId ? 'Save Improvements' : 'Create Profile'}</Button></div></div><div className="h-2 rounded-full bg-muted overflow-hidden"><div className={`h-full transition-all ${pcolor(completeness.overall)}`} style={{ width: `${completeness.overall}%` }} /></div><div className="grid grid-cols-2 xl:grid-cols-4 gap-2">{Object.entries(completeness.components).filter(([k])=>k!=='profileTarget').map(([k,v])=><div key={k} className="rounded border border-border/70 p-1.5"><div className="flex items-center justify-between text-[11px] mb-1"><span>{label(k)}</span><span>{v}%</span></div><div className="h-1.5 rounded-full bg-muted overflow-hidden"><div className={`h-full transition-all ${pcolor(v)}`} style={{ width: `${v}%` }} /></div></div>)}</div><div className="flex flex-wrap gap-1.5 pt-1">{(['basics','target','experience','education','skills','projects','certifications','languages','publications'] as SectionId[]).map(s=><Button key={s} type="button" size="xs" variant="outline" onClick={()=>jump(s)}>{label(s)}</Button>)}</div></div>
       <div className="px-4 pb-4 pt-3 space-y-3">
       <Accordion title="Basic Details" open={open.basics} setRef={(el)=>{refs.current.basics = el;}} highlighted={highlightSection==='basics'} onToggle={()=>setOpen(p=>({...p, basics:!p.basics}))}><div className="grid grid-cols-2 gap-2"><input value={profileState.basics.name ?? ''} onChange={(e)=>updateBasics('name', e.target.value)} placeholder="Name" className={inCls('basics.name')} /><input value={profileState.basics.headline ?? ''} onChange={(e)=>updateBasics('headline', e.target.value)} placeholder="Headline" className={inCls('basics.headline')} /><input value={profileState.basics.email ?? ''} onChange={(e)=>updateBasics('email', e.target.value)} placeholder="Email" className={inCls('basics.email')} /><input value={profileState.basics.phone ?? ''} onChange={(e)=>updateBasics('phone', e.target.value)} placeholder="Phone" className={inCls('basics.phone')} /><input value={profileState.basics.location ?? ''} onChange={(e)=>updateBasics('location', e.target.value)} placeholder="Location" className={inCls('basics.location')} /><input value={profileState.basics.linkedin ?? ''} onChange={(e)=>updateBasics('linkedin', e.target.value)} placeholder="LinkedIn URL" className={inCls('basics.linkedin')} /><textarea value={profileState.basics.summary ?? ''} onChange={(e)=>updateBasics('summary', e.target.value)} rows={3} placeholder="Professional summary" className={`col-span-2 ${inCls('basics.summary')} resize-none`} /></div></Accordion>
       <Accordion title="Profile Target Goals" open={open.target} setRef={(el)=>{refs.current.target = el;}} highlighted={highlightSection==='target'} onToggle={()=>setOpen(p=>({...p, target:!p.target}))}><div className="grid grid-cols-2 xl:grid-cols-4 gap-2"><NumberField label="Min experience" value={targetState.minExperienceEntries} onChange={(v)=>setTargetState(p=>({...p, minExperienceEntries:v}))} /><NumberField label="Min education" value={targetState.minEducationEntries} onChange={(v)=>setTargetState(p=>({...p, minEducationEntries:v}))} /><NumberField label="Min projects" value={targetState.minProjectEntries} onChange={(v)=>setTargetState(p=>({...p, minProjectEntries:v}))} /><NumberField label="Min skills" value={targetState.minSkillCount} onChange={(v)=>setTargetState(p=>({...p, minSkillCount:v}))} /></div><div className="flex flex-wrap gap-1.5">{BASICS.map(f=><Button key={f} type="button" size="xs" variant={targetState.requiredBasics.includes(f)?'default':'outline'} onClick={()=>toggleTargetBasic(f)}>{label(f)}</Button>)}</div><div className="flex flex-wrap gap-1.5">{SECTIONS.map(s=><Button key={s} type="button" size="xs" variant={targetState.prioritySections.includes(s)?'default':'outline'} onClick={()=>toggleTargetSection(s)}>{label(s)}</Button>)}</div><textarea value={targetState.notes} onChange={(e)=>setTargetState(p=>({...p, notes:e.target.value}))} rows={2} placeholder="Target notes" className={`${INPUT} resize-none`} /></Accordion>
@@ -386,7 +394,6 @@ export function ProfileBuilderAgent({ consultantId }: { consultantId?: string })
       <Section title="Certifications" open={open.certifications} highlighted={highlightSection==='certifications'} setRef={(el)=>{refs.current.certifications = el;}} onToggle={()=>setOpen(p=>({...p, certifications:!p.certifications}))} onAdd={()=>add('certifications')}>{profileState.certifications.map((e,i)=><GenericEntry key={keyOf('cert', e.id, i)} entry={e} highlight={!!highlightPath?.startsWith(`certifications.${i}`)} onChange={(patch)=>updateArr('certifications', i, patch)} onRemove={()=>remArr('certifications', i)} />)}</Section>
       <Section title="Languages" open={open.languages} highlighted={highlightSection==='languages'} setRef={(el)=>{refs.current.languages = el;}} onToggle={()=>setOpen(p=>({...p, languages:!p.languages}))} onAdd={()=>add('languages')}>{profileState.languages.map((e,i)=><div key={keyOf('lang', e.id, i)} className={`rounded border p-2 grid grid-cols-[1fr_180px_36px] gap-2 ${highlightPath?.startsWith(`languages.${i}`)?'border-primary ring-1 ring-primary/40':'border-border/70'}`}><input value={e.language ?? ''} onChange={(x)=>updateArr('languages', i, { language:x.target.value })} placeholder="Language" className={INPUT} /><input value={e.level ?? ''} onChange={(x)=>updateArr('languages', i, { level:x.target.value })} placeholder="Level" className={INPUT} /><Button type="button" size="icon-xs" variant="ghost" className="hover:text-destructive" onClick={()=>remArr('languages', i)}><Trash2 size={13} /></Button></div>)}</Section>
       <Section title="Publications" open={open.publications} highlighted={highlightSection==='publications'} setRef={(el)=>{refs.current.publications = el;}} onToggle={()=>setOpen(p=>({...p, publications:!p.publications}))} onAdd={()=>add('publications')}>{profileState.publications.map((e,i)=><GenericEntry key={keyOf('pub', e.id, i)} entry={e} highlight={!!highlightPath?.startsWith(`publications.${i}`)} onChange={(patch)=>updateArr('publications', i, patch)} onRemove={()=>remArr('publications', i)} />)}</Section>
-      <div className="flex justify-end"><Button type="button" onClick={save} disabled={isSaving || !profileState.basics.name.trim()}>{isSaving ? 'Saving...' : consultantId ? 'Save Improvements' : 'Create Profile'}</Button></div>
       <details className="rounded-md border border-border p-2">
         <summary className="text-xs cursor-pointer" onClick={() => setShowDebug((p) => !p)}>Builder LLM Log</summary>
         {showDebug && (
