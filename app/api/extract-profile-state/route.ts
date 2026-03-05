@@ -33,6 +33,7 @@ export async function POST(req: Request) {
       email: toString(object.email),
       phone: toString(object.phone),
       location: toString(object.location),
+      linkedin: '',
       summary: toString(object.summary),
     };
 

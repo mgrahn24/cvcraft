@@ -35,6 +35,7 @@ export const profileBuilderStateSchema = z.object({
     email: z.string().default(''),
     phone: z.string().default(''),
     location: z.string().default(''),
+    linkedin: z.string().default(''),
     summary: z.string().default(''),
   }),
   experience: z.array(
@@ -55,7 +56,7 @@ export const profileBuilderStateSchema = z.object({
 });
 
 export const profileBuilderTargetStateSchema = z.object({
-  requiredBasics: z.array(z.enum(['name', 'headline', 'email', 'phone', 'location', 'summary'])),
+  requiredBasics: z.array(z.enum(['name', 'headline', 'email', 'phone', 'location', 'linkedin', 'summary'])),
   minExperienceEntries: z.number().int().min(0).max(20),
   minEducationEntries: z.number().int().min(0).max(10),
   minProjectEntries: z.number().int().min(0).max(20),
@@ -97,6 +98,7 @@ export const defaultProfileBuilderState: ProfileBuilderState = {
     email: '',
     phone: '',
     location: '',
+    linkedin: '',
     summary: '',
   },
   experience: [],
@@ -242,8 +244,9 @@ function scoreBasics(state: ProfileBuilderState) {
     filled(b.email) +
     filled(b.phone) +
     filled(b.location) +
+    filled(b.linkedin) +
     filled(b.summary);
-  return Math.round((total / 6) * 100);
+  return Math.min(Math.round((total / 7) * 100), 95);
 }
 
 function scoreEntryArray(
@@ -264,15 +267,17 @@ function scoreEntryArray(
   });
   const detail = perEntry.reduce((a, b) => a + b, 0) / perEntry.length;
   const coverage = Math.min(entries.length / targetCount, 1);
-  return Math.round((detail * 0.7 + coverage * 0.3) * 100);
+  return Math.min(Math.round((detail * 0.72 + coverage * 0.28) * 100), 95);
 }
 
 function scoreSkills(state: ProfileBuilderState) {
   const count = state.skills.filter((s) => s.name.trim()).length;
   if (count === 0) return 0;
-  if (count < 4) return 40;
-  if (count < 8) return 70;
-  return 100;
+  if (count < 4) return 35;
+  if (count < 7) return 55;
+  if (count < 10) return 72;
+  if (count < 14) return 86;
+  return 95;
 }
 
 function scoreTarget(profile: ProfileBuilderState, target: ProfileBuilderTargetState) {
@@ -314,7 +319,7 @@ function scoreTarget(profile: ProfileBuilderState, target: ProfileBuilderTargetS
   }
 
   if (activeScores.length === 0) return 100;
-  return Math.round((activeScores.reduce((a, b) => a + b, 0) / activeScores.length) * 100);
+  return Math.min(Math.round((activeScores.reduce((a, b) => a + b, 0) / activeScores.length) * 100), 92);
 }
 
 const WEIGHTS: Record<keyof ComponentScores, number> = {
@@ -349,7 +354,17 @@ export function calculateCompleteness(
     (sum, key) => sum + components[key] * WEIGHTS[key],
     0
   );
-  const overall = Math.round(overallRaw / 100);
+  let overall = Math.round(overallRaw / 100);
+  const advancedReady =
+    profileState.experience.length >= 4 &&
+    profileState.skills.filter((s) => s.name.trim()).length >= 12 &&
+    profileState.education.length >= 1 &&
+    profileState.projects.length >= 2 &&
+    profileState.languages.length >= 2 &&
+    profileState.publications.length >= 1 &&
+    profileState.basics.summary.trim().length >= 200;
+  if (!advancedReady) overall = Math.min(overall, 96);
+  if (advancedReady && overall < 98) overall = 98;
   const nextFocus = (Object.entries(components) as Array<[keyof ComponentScores, number]>)
     .filter(([key]) => key !== 'profileTarget')
     .sort((a, b) => a[1] - b[1])[0][0];

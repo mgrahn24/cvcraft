@@ -93,6 +93,7 @@ export async function POST(req: Request) {
               email: text(basics.email),
               phone: text(basics.phone),
               location: text(basics.location),
+              linkedin: '',
               summary: text(basics.summary),
             },
           }], 'Added basic details');

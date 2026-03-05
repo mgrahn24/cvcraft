@@ -5,6 +5,9 @@ import {
   calculateCompleteness,
   normalizePatchPath,
   profileBuilderAgentOutputSchema,
+  profileBuilderStateSchema,
+  profileBuilderTargetStateSchema,
+  type PatchOp,
   type ProfileBuilderState,
   type ProfileBuilderTargetState,
   profileBuilderTurnRequestSchema,
@@ -23,9 +26,93 @@ function mapProfilePathAliases(path: string): string {
     position: 'title',
     jobTitle: 'title',
     role: 'title',
+    linkedIn: 'linkedin',
+    linkedinUrl: 'linkedin',
+    linkedInUrl: 'linkedin',
+    website: 'linkedin',
+    proficiency: 'level',
+    fluency: 'level',
   };
+  if (parts[0] === 'languages' && last === 'name') {
+    parts[parts.length - 1] = 'language';
+    return parts.join('.');
+  }
   if (alias[last]) parts[parts.length - 1] = alias[last];
   return parts.join('.');
+}
+
+function sanitizeLanguageObject(value: unknown) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return value;
+  const v = value as Record<string, unknown>;
+  return {
+    id: typeof v.id === 'string' && v.id ? v.id : crypto.randomUUID(),
+    language:
+      typeof v.language === 'string' ? v.language :
+      typeof v.name === 'string' ? v.name :
+      typeof v.lang === 'string' ? v.lang : '',
+    level:
+      typeof v.level === 'string' ? v.level :
+      typeof v.proficiency === 'string' ? v.proficiency :
+      typeof v.fluency === 'string' ? v.fluency : '',
+  };
+}
+
+function sanitizeProfilePatchValue(path: string, value: unknown): unknown {
+  if (path === 'languages' && Array.isArray(value)) {
+    return value.map((v) => sanitizeLanguageObject(v));
+  }
+  if (/^languages\.\d+$/.test(path)) {
+    return sanitizeLanguageObject(value);
+  }
+  if (path === 'skills' && Array.isArray(value)) {
+    return value.map((v) => {
+      if (typeof v === 'string') return { id: crypto.randomUUID(), name: v, level: '' };
+      if (v && typeof v === 'object' && !Array.isArray(v)) {
+        const o = v as Record<string, unknown>;
+        return {
+          id: typeof o.id === 'string' && o.id ? o.id : crypto.randomUUID(),
+          name: typeof o.name === 'string' ? o.name : '',
+          level: typeof o.level === 'string' ? o.level : '',
+        };
+      }
+      return { id: crypto.randomUUID(), name: '', level: '' };
+    });
+  }
+  return value;
+}
+
+function applyValidProfilePatches(
+  base: ProfileBuilderState,
+  ops: PatchOp[]
+): { next: ProfileBuilderState; accepted: PatchOp[] } {
+  let next = base;
+  const accepted: PatchOp[] = [];
+  for (const op of ops) {
+    const candidate = applyPatchOps(next as unknown as Record<string, unknown>, [op]) as unknown as ProfileBuilderState;
+    const parsed = profileBuilderStateSchema.safeParse(candidate);
+    if (parsed.success) {
+      next = parsed.data;
+      accepted.push(op);
+    }
+  }
+  return { next, accepted };
+}
+
+function applyValidTargetPatches(
+  base: ProfileBuilderTargetState,
+  ops: PatchOp[]
+): { next: ProfileBuilderTargetState; accepted: PatchOp[] } {
+  let next = base;
+  const accepted: PatchOp[] = [];
+  for (const op of ops) {
+    const candidate = applyPatchOps(next as unknown as Record<string, unknown>, [op]) as unknown as ProfileBuilderTargetState;
+    const parsed = profileBuilderTargetStateSchema.safeParse(candidate);
+    if (parsed.success) {
+      next = parsed.data;
+      accepted.push(op);
+    }
+  }
+  return { next, accepted };
 }
 
 const SYSTEM_PROMPT = `You are a profile-building agent for CV creation.
@@ -104,14 +191,18 @@ export async function POST(req: Request) {
     };
     console.info('[profile-builder-turn:llm]\n' + JSON.stringify(logPayload, null, 2));
 
-    const profilePatch = canApplyPatches
-      ? (object.profilePatch ?? []).map((op) => ({ ...op, path: mapProfilePathAliases(op.path) }))
+    const rawProfilePatch = canApplyPatches
+      ? (object.profilePatch ?? []).map((op) => {
+          const path = mapProfilePathAliases(op.path);
+          return { path, value: sanitizeProfilePatchValue(path, op.value) };
+        })
       : [];
-    const targetPatch = canApplyPatches
+    const rawTargetPatch = canApplyPatches
       ? (object.targetPatch ?? []).map((op) => ({ ...op, path: normalizePatchPath(op.path) }))
       : [];
-    const nextProfile = applyPatchOps(input.profileState as unknown as Record<string, unknown>, profilePatch) as unknown as ProfileBuilderState;
-    const nextTarget = applyPatchOps(input.targetState as unknown as Record<string, unknown>, targetPatch) as unknown as ProfileBuilderTargetState;
+
+    const { next: nextProfile, accepted: profilePatch } = applyValidProfilePatches(input.profileState, rawProfilePatch);
+    const { next: nextTarget, accepted: targetPatch } = applyValidTargetPatches(input.targetState, rawTargetPatch);
     const completeness = calculateCompleteness(nextProfile, nextTarget);
 
     return Response.json({

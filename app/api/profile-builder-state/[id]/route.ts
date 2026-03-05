@@ -26,6 +26,7 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
       email: consultant.email ?? '',
       phone: consultant.phone ?? '',
       location: consultant.location ?? '',
+      linkedin: '',
       summary: consultant.summary ?? '',
     };
 
